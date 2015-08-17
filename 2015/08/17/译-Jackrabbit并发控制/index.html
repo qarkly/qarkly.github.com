@@ -3,28 +3,22 @@
 <head>
   <meta charset="utf-8">
   
-  <title>qarkly的博客</title>
+  <title>[译]Jackrabbit并发控制 | qarkly的博客</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="title: ‘[译]Jackrabbit并发控制’date: 2015-08-17 22:57:28tags: [Jackrabbit,内容仓库]catagories: 编程  
-
-Apache Jackrabbit内部的并发模型相当复杂，在JackRabbit 1.x发布周期内报告并修复了大量的死锁问题。这篇文章是设计和code review的成果，旨在主动预防其他类似的问题
-此文是关于Jac">
+  <meta name="description" content="Apache Jackrabbit内部的并发模型相当复杂，在JackRabbit 1.x发布周期内报告并修复了大量的死锁问题。这篇文章是设计和code review的成果，旨在主动预防其他类似的问题
+此文是关于Jackrabbit的内部并发和同步机制模型，不是关于JCR的锁特性。注意此文是从架构层面审阅并发控制，并不关注像个别类或组件的多线程安全之类的问题。此review是基于JackRabbit">
 <meta property="og:type" content="article">
-<meta property="og:title" content="qarkly的博客">
+<meta property="og:title" content="[译]Jackrabbit并发控制">
 <meta property="og:url" content="http://qarkly@github.com/2015/08/17/译-Jackrabbit并发控制/index.html">
 <meta property="og:site_name" content="qarkly的博客">
-<meta property="og:description" content="title: ‘[译]Jackrabbit并发控制’date: 2015-08-17 22:57:28tags: [Jackrabbit,内容仓库]catagories: 编程  
-
-Apache Jackrabbit内部的并发模型相当复杂，在JackRabbit 1.x发布周期内报告并修复了大量的死锁问题。这篇文章是设计和code review的成果，旨在主动预防其他类似的问题
-此文是关于Jac">
+<meta property="og:description" content="Apache Jackrabbit内部的并发模型相当复杂，在JackRabbit 1.x发布周期内报告并修复了大量的死锁问题。这篇文章是设计和code review的成果，旨在主动预防其他类似的问题
+此文是关于Jackrabbit的内部并发和同步机制模型，不是关于JCR的锁特性。注意此文是从架构层面审阅并发控制，并不关注像个别类或组件的多线程安全之类的问题。此review是基于JackRabbit">
 <meta property="og:image" content="https://cloud.githubusercontent.com/assets/6206101/9248520/f6964ade-41ee-11e5-8b62-1762514fe81f.png">
-<meta property="og:updated_time" content="2015-08-17T15:11:27.007Z">
+<meta property="og:updated_time" content="2015-08-17T15:18:47.526Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="qarkly的博客">
-<meta name="twitter:description" content="title: ‘[译]Jackrabbit并发控制’date: 2015-08-17 22:57:28tags: [Jackrabbit,内容仓库]catagories: 编程  
-
-Apache Jackrabbit内部的并发模型相当复杂，在JackRabbit 1.x发布周期内报告并修复了大量的死锁问题。这篇文章是设计和code review的成果，旨在主动预防其他类似的问题
-此文是关于Jac">
+<meta name="twitter:title" content="[译]Jackrabbit并发控制">
+<meta name="twitter:description" content="Apache Jackrabbit内部的并发模型相当复杂，在JackRabbit 1.x发布周期内报告并修复了大量的死锁问题。这篇文章是设计和code review的成果，旨在主动预防其他类似的问题
+此文是关于Jackrabbit的内部并发和同步机制模型，不是关于JCR的锁特性。注意此文是从架构层面审阅并发控制，并不关注像个别类或组件的多线程安全之类的问题。此review是基于JackRabbit">
   
     <link rel="alternative" href="/atom.xml" title="qarkly的博客" type="application/atom+xml">
   
@@ -125,7 +119,7 @@ Apache Jackrabbit内部的并发模型相当复杂，在JackRabbit 1.x发布周�
 				
 				<section class="switch-part switch-part2">
 					<div class="widget tagcloud" id="js-tagcloud">
-						<a href="/tags/Jackrabbit/" style="font-size: 10px;">Jackrabbit</a> <a href="/tags/Lambda/" style="font-size: 20px;">Lambda</a> <a href="/tags/java/" style="font-size: 20px;">java</a> <a href="/tags/java8/" style="font-size: 20px;">java8</a> <a href="/tags/mina/" style="font-size: 10px;">mina</a> <a href="/tags/内容仓库/" style="font-size: 10px;">内容仓库</a> <a href="/tags/生活/" style="font-size: 10px;">生活</a> <a href="/tags/算法/" style="font-size: 15px;">算法</a> <a href="/tags/系统知识/" style="font-size: 10px;">系统知识</a> <a href="/tags/设计模式/" style="font-size: 15px;">设计模式</a> <a href="/tags/责任链/" style="font-size: 10px;">责任链</a> <a href="/tags/责任链模式/" style="font-size: 10px;">责任链模式</a> <a href="/tags/随笔/" style="font-size: 10px;">随笔</a>
+						<a href="/tags/Jackrabbit/" style="font-size: 15px;">Jackrabbit</a> <a href="/tags/Lambda/" style="font-size: 20px;">Lambda</a> <a href="/tags/java/" style="font-size: 20px;">java</a> <a href="/tags/java8/" style="font-size: 20px;">java8</a> <a href="/tags/mina/" style="font-size: 10px;">mina</a> <a href="/tags/内容仓库/" style="font-size: 15px;">内容仓库</a> <a href="/tags/生活/" style="font-size: 10px;">生活</a> <a href="/tags/算法/" style="font-size: 15px;">算法</a> <a href="/tags/系统知识/" style="font-size: 10px;">系统知识</a> <a href="/tags/设计模式/" style="font-size: 15px;">设计模式</a> <a href="/tags/责任链/" style="font-size: 10px;">责任链</a> <a href="/tags/责任链模式/" style="font-size: 10px;">责任链模式</a> <a href="/tags/随笔/" style="font-size: 10px;">随笔</a>
 					</div>
 				</section>
 				
@@ -199,7 +193,7 @@ Apache Jackrabbit内部的并发模型相当复杂，在JackRabbit 1.x发布周�
   
     <div class="article-meta">
       <a href="/2015/08/17/译-Jackrabbit并发控制/" class="article-date">
-  	<time datetime="2015-08-16T16:00:00.000Z" itemprop="datePublished">2015-08-17</time>
+  	<time datetime="2015-08-17T14:57:28.000Z" itemprop="datePublished">2015-08-17</time>
 </a>
     </div>
   
@@ -208,11 +202,31 @@ Apache Jackrabbit内部的并发模型相当复杂，在JackRabbit 1.x发布周�
       <input type="hidden" class="isFancy" />
     
     
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      [译]Jackrabbit并发控制
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+	<div class="article-tag tagcloud">
+		<ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Jackrabbit/">Jackrabbit</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/内容仓库/">内容仓库</a></li></ul>
+	</div>
+
+        
+
+        <div class="clearfix"></div>
+      </div>
+      
+    
     <div class="article-entry" itemprop="articleBody">
       
-        <p>title: ‘[译]Jackrabbit并发控制’<br>date: 2015-08-17 22:57:28<br>tags: [Jackrabbit,内容仓库]<br>catagories: 编程  </p>
-<hr>
-<p>Apache Jackrabbit内部的并发模型相当复杂，在JackRabbit 1.x发布周期内报告并修复了大量的死锁问题。这篇文章是设计和code review的成果，旨在主动预防其他类似的问题</p>
+        <p>Apache Jackrabbit内部的并发模型相当复杂，在JackRabbit 1.x发布周期内报告并修复了大量的死锁问题。这篇文章是设计和code review的成果，旨在主动预防其他类似的问题</p>
 <p>此文是关于Jackrabbit的内部并发和同步机制模型，不是关于JCR的锁特性。注意此文是从架构层面审阅并发控制，并不关注像个别类或组件的多线程安全之类的问题。<br>此review是基于JackRabbit 1.5版本的默认版本</p>
 <h2 id="架构背景">架构背景</h2><p><img src="https://cloud.githubusercontent.com/assets/6206101/9248520/f6964ade-41ee-11e5-8b62-1762514fe81f.png" alt="image"></p>
 <p>从并发控制方面，Jackrabbit 架构大概可以分成下面的五个层次<br>1.集群<br>2.仓库<br>3.工作空间<br>4.会话<br>5.事务</p>
@@ -232,18 +246,9 @@ Apache Jackrabbit内部的并发模型相当复杂，在JackRabbit 1.x发布周�
     
 <nav id="article-nav">
   
-    <a href="/2015/08/17/译-Jackrabbit是如何工作的/" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption"><</strong>
-      <div class="article-nav-title">
-        
-          [译]Jackrabbit是如何工作的
-        
-      </div>
-    </a>
   
-  
-    <a href="/2015/08/15/hello-world/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">Hello World</div>
+    <a href="/2015/08/17/译-Jackrabbit是如何工作的/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">[译]Jackrabbit是如何工作的</div>
       <strong class="article-nav-caption">></strong>
     </a>
   
@@ -272,7 +277,7 @@ Apache Jackrabbit内部的并发模型相当复杂，在JackRabbit 1.x发布周�
 
 <div class="duoshuo">
 	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="译-Jackrabbit并发控制" data-title="" data-url="http://qarkly@github.com/2015/08/17/译-Jackrabbit并发控制/"></div>
+	<div class="ds-thread" data-thread-key="译-Jackrabbit并发控制" data-title="[译]Jackrabbit并发控制" data-url="http://qarkly@github.com/2015/08/17/译-Jackrabbit并发控制/"></div>
 	<!-- 多说评论框 end -->
 	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 	<script type="text/javascript">
