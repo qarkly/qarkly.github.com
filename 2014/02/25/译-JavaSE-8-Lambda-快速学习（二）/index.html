@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>[译]JavaSE 8 :Lambda 快速学习（二） | qarkly的博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="使用Lambda表达式改进代码
+本章节根据前面的例子来向你展示Lambda表达式是如何改进你的代码的.Lambda表达式更好地支持不要重复自己(Donot Repeat Yourself)原则，并使你的代码更简单和更具有可读性。
+一个常见的查询用例
+一个常见的编程用例就是根据特定的规则从数据集合中查找元素。在2012年JavaOne大会上精彩的“Jump-Starting Lambda”演说中，S">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[译]JavaSE 8 :Lambda 快速学习（二）">
+<meta property="og:url" content="http://qarkly@github.com/2014/02/25/译-JavaSE-8-Lambda-快速学习（二）/index.html">
+<meta property="og:site_name" content="qarkly的博客">
+<meta property="og:description" content="使用Lambda表达式改进代码
+本章节根据前面的例子来向你展示Lambda表达式是如何改进你的代码的.Lambda表达式更好地支持不要重复自己(Donot Repeat Yourself)原则，并使你的代码更简单和更具有可读性。
+一个常见的查询用例
+一个常见的编程用例就是根据特定的规则从数据集合中查找元素。在2012年JavaOne大会上精彩的“Jump-Starting Lambda”演说中，S">
+<meta property="og:updated_time" content="2015-08-15T10:02:48.934Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="[译]JavaSE 8 :Lambda 快速学习（二）">
+<meta name="twitter:description" content="使用Lambda表达式改进代码
+本章节根据前面的例子来向你展示Lambda表达式是如何改进你的代码的.Lambda表达式更好地支持不要重复自己(Donot Repeat Yourself)原则，并使你的代码更简单和更具有可读性。
+一个常见的查询用例
+一个常见的编程用例就是根据特定的规则从数据集合中查找元素。在2012年JavaOne大会上精彩的“Jump-Starting Lambda”演说中，S">
+  
+    <link rel="alternative" href="/atom.xml" title="qarkly的博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link rel="stylesheet" href="/css/style.css" type="text/css">
+</head>
+<body>
+  <div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+	<header id="header" class="inner">
+		<a href="/" class="profilepic">
+			
+			<img lazy-src="/selfi.png" class="js-avatar">
+			
+		</a>
+
+		<hgroup>
+		  <h1 class="header-author"><a href="/">qarkly</a></h1>
+		</hgroup>
+
+		
+		<p class="header-subtitle">个人技术博客</p>
+		
+
+		
+			<div class="switch-btn">
+				<div class="icon">
+					<div class="icon-ctn">
+						<div class="icon-wrap icon-house" data-idx="0">
+							<div class="birdhouse"></div>
+							<div class="birdhouse_holes"></div>
+						</div>
+						<div class="icon-wrap icon-ribbon hide" data-idx="1">
+							<div class="ribbon"></div>
+						</div>
+						
+						<div class="icon-wrap icon-link hide" data-idx="2">
+							<div class="loopback_l"></div>
+							<div class="loopback_r"></div>
+						</div>
+						
+						
+						<div class="icon-wrap icon-me hide" data-idx="3">
+							<div class="user"></div>
+							<div class="shoulder"></div>
+						</div>
+						
+					</div>
+					
+				</div>
+				<div class="tips-box hide">
+					<div class="tips-arrow"></div>
+					<ul class="tips-inner">
+						<li>菜单</li>
+						<li>标签</li>
+						
+						<li>友情链接</li>
+						
+						
+						<li>关于我</li>
+						
+					</ul>
+				</div>
+			</div>
+		
+
+		<div class="switch-area">
+			<div class="switch-wrap">
+				<section class="switch-part switch-part1">
+					<nav class="header-menu">
+						<ul>
+						
+							<li><a href="/">主页</a></li>
+				        
+							<li><a href="/archives">所有文章</a></li>
+				        
+							<li><a href="/tags/随笔">随笔</a></li>
+				        
+						</ul>
+					</nav>
+					<nav class="header-nav">
+						<div class="social">
+							
+								<a class="github" target="_blank" href="https://github.com/qarkly" title="github">github</a>
+					        
+								<a class="weibo" target="_blank" href="http://weibo.com/qarkly" title="weibo">weibo</a>
+					        
+								<a class="rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+					        
+						</div>
+					</nav>
+				</section>
+				
+				
+				<section class="switch-part switch-part2">
+					<div class="widget tagcloud" id="js-tagcloud">
+						<a href="/tags/Jackrabbit/" style="font-size: 10px;">Jackrabbit</a> <a href="/tags/Lambda/" style="font-size: 20px;">Lambda</a> <a href="/tags/java/" style="font-size: 20px;">java</a> <a href="/tags/java8/" style="font-size: 20px;">java8</a> <a href="/tags/mina/" style="font-size: 10px;">mina</a> <a href="/tags/内容仓库/" style="font-size: 10px;">内容仓库</a> <a href="/tags/生活/" style="font-size: 10px;">生活</a> <a href="/tags/算法/" style="font-size: 15px;">算法</a> <a href="/tags/系统知识/" style="font-size: 10px;">系统知识</a> <a href="/tags/设计模式/" style="font-size: 15px;">设计模式</a> <a href="/tags/责任链/" style="font-size: 10px;">责任链</a> <a href="/tags/责任链模式/" style="font-size: 10px;">责任链模式</a> <a href="/tags/随笔/" style="font-size: 10px;">随笔</a>
+					</div>
+				</section>
+				
+				
+				
+				<section class="switch-part switch-part3">
+					<div id="js-friends">
+					
+			          <a target="_blank" class="main-nav-link switch-friends-link" href="http://blog.csdn.net/qarkly112649">csdn的博客</a>
+			        
+			        </div>
+				</section>
+				
+
+				
+				
+				<section class="switch-part switch-part4">
+				
+					<div id="js-aboutme">南京邮电大学09级,就职于华为从事web相关工作…</div>
+				</section>
+				
+			</div>
+		</div>
+	</header>				
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+  	<div class="overlay">
+  		<div class="slider-trigger"></div>
+  		<h1 class="header-author js-mobile-header hide">qarkly</h1>
+  	</div>
+	<div class="intrude-less">
+		<header id="header" class="inner">
+			<div class="profilepic">
+				<img lazy-src="/selfi.png" class="js-avatar">
+			</div>
+			<hgroup>
+			  <h1 class="header-author">qarkly</h1>
+			</hgroup>
+			
+			<p class="header-subtitle">个人技术博客</p>
+			
+			<nav class="header-menu">
+				<ul>
+				
+					<li><a href="/">主页</a></li>
+		        
+					<li><a href="/archives">所有文章</a></li>
+		        
+					<li><a href="/tags/随笔">随笔</a></li>
+		        
+		        <div class="clearfix"></div>
+				</ul>
+			</nav>
+			<nav class="header-nav">
+				<div class="social">
+					
+						<a class="github" target="_blank" href="https://github.com/qarkly" title="github">github</a>
+			        
+						<a class="weibo" target="_blank" href="http://weibo.com/qarkly" title="weibo">weibo</a>
+			        
+						<a class="rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+			        
+				</div>
+			</nav>
+		</header>				
+	</div>
+</nav>
+      <div class="body-wrap"><article id="post-译-JavaSE-8-Lambda-快速学习（二）" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2014/02/25/译-JavaSE-8-Lambda-快速学习（二）/" class="article-date">
+  	<time datetime="2014-02-25T14:18:27.000Z" itemprop="datePublished">2014-02-25</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      [译]JavaSE 8 :Lambda 快速学习（二）
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+	<div class="article-tag tagcloud">
+		<ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Lambda/">Lambda</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/java8/">java8</a></li></ul>
+	</div>
+
+        
+
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p><span lang="zh-CN" style="font-family:宋体; font-weight:bold">使用</span><span lang="en-US" style="font-family:Calibri; font-weight:bold">Lambda</span><span lang="zh-CN" style="font-family:宋体; font-weight:bold">表达式改进代码</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">本章节根据前面的例子来向你展示</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式是如何改进你的代码的</span><span lang="en-US" style="font-family:Calibri">.Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式更好地支持不要重复自己</span><span lang="en-US" style="font-family:Calibri">(Donot<br> Repeat Yourself)</span><span lang="zh-CN" style="font-family:宋体">原则，并使你的代码更简单和更具有可读性。</span></p>
+<p><span style="font-weight:bold">一个常见的查询用例</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">一个常见的编程用例就是根据特定的规则从数据集合中查找元素。在</span><span lang="en-US" style="font-family:Calibri">2012</span><span lang="zh-CN" style="font-family:宋体">年</span><span lang="en-US" style="font-family:Calibri">JavaOne</span><span lang="zh-CN" style="font-family:宋体">大会上精彩的“</span><span lang="en-US" style="font-family:Calibri">Jump-Starting<br> Lambda</span><span lang="zh-CN" style="font-family:宋体">”演说中，Stuart Marks 和 MikeDuigou就是使用这个用例做示范。给一个人名单，使用不同规则让机器人和匹配的人通话。这个教程也遵循这一基本前提但稍微有些变化。</span></p>
+<p>在这个示例中，我们的信息需要区分在美国的三个不同的群体。</p>
+<ul>
+<li><p><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">司机</span><span lang="en-US" style="font-family:Calibri; font-size:10.5pt">:</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">年龄在</span><span lang="en-US" style="font-family:Calibri; font-size:10.5pt">16</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">岁以上的</span></p>
+</li>
+<li><p><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">应征者</span><span lang="en-US" style="font-family:Calibri; font-size:10.5pt">:</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">年龄在</span><span lang="en-US" style="font-family:Calibri; font-size:10.5pt">18-25</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">岁的男性</span></p>
+</li>
+<li><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">飞行员</span><span lang="en-US" style="font-family:Calibri; font-size:10.5pt">(</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">特指商业飞行员</span><span lang="en-US" style="font-family:Calibri; font-size:10.5pt">):</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">年龄在</span><span lang="en-US" style="font-family:Calibri; font-size:10.5pt">23-65</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">之间</span></li>
+</ul>
+<p><span lang="zh-CN" style="font-family:宋体">能够完成这些任务的真实机器人还没有进入商用阶段</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">这里不打电话</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">邮寄或者发送电子邮件</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">取而代之是将信息在控制台打印出来</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">信息包含一个人的名字</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">年龄和一些特定的媒体信息</span><span lang="en-US" style="font-family:Calibri">(</span><span lang="zh-CN" style="font-family:宋体">例如用来发送电邮的电子邮箱地址</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">打电话所需要的电话号码</span><span lang="en-US" style="font-family:Calibri">)</span></p>
+<p><span lang="en-US" style="font-family:Calibri"></span></p>
+<p><span style="font-weight:bold">Person Class</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">在测试名单中的人都是使用</span><span lang="en-US" style="font-family:Calibri">Person</span><span lang="zh-CN" style="font-family:宋体">类来定义并具有以下的属性</span><span lang="en-US" style="font-family:Calibri">:</span></p>
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_1_9021564" name="code" class="java"> public class Person {
+   private String givenName;
+   private String surName;
+   private int age;
+   private Gender gender;
+   private String eMail;
+   private String phone;
+   private String address;
+</pre><span lang="zh-CN" style="font-family:宋体">这个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Person</span><span lang="zh-CN" style="font-family:宋体">类使用</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Builder</span><span lang="zh-CN" style="font-family:宋体">来创建新对象</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">示例的人名单列表是使用</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">createShortList</span><span lang="zh-CN" style="font-family:宋体">
+ 方法创建</span><span lang="en-US" style="font-family:Consolas">.</span><span lang="zh-CN" style="font-family:宋体">下面是该方法的阶段代码片段</span><span lang="en-US" style="font-family:Consolas">.</span><span lang="zh-CN" style="font-family:宋体">注意</span><span lang="en-US" style="font-family:Consolas">:</span><span lang="zh-CN" style="font-family:宋体">这个教程所有的源代码都包含在一个</span><span lang="en-US" style="font-family:Consolas">NetBeans</span><span lang="zh-CN" style="font-family:宋体">工程中，在这一章节的最后有链接地址。</span>
+
+<span lang="en-US" style="font-family:Calibri"></span>
+
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_2_3034727" name="code" class="java"> public static List&lt;Person&gt; createShortList(){     List&lt;Person&gt; people = new ArrayList&lt;&gt;();
+
+     people.add(
+       new Person.Builder()
+             .givenName(&quot;Bob&quot;)
+             .surName(&quot;Baker&quot;)
+             .age(21)
+             .gender(Gender.MALE)
+             .email(&quot;bob.baker@example.com&quot;)
+             .phoneNumber(&quot;201-121-4678&quot;)
+             .address(&quot;44 4th St, Smallville, KS 12333&quot;)
+             .build()
+       );
+
+     people.add(
+       new Person.Builder()
+             .givenName(&quot;Jane&quot;)
+             .surName(&quot;Doe&quot;)
+             .age(25)
+             .gender(Gender.FEMALE)
+             .email(&quot;jane.doe@example.com&quot;)
+             .phoneNumber(&quot;202-123-4678&quot;)
+             .address(&quot;33 3rd St, Smallville, KS 12333&quot;)
+             .build()
+       );
+
+     people.add(
+       new Person.Builder()
+             .givenName(&quot;John&quot;)
+             .surName(&quot;Doe&quot;)
+             .age(25)
+             .gender(Gender.MALE)
+             .email(&quot;john.doe@example.com&quot;)
+             .phoneNumber(&quot;202-123-4678&quot;)
+             .address(&quot;33 3rd St, Smallville, KS 12333&quot;)
+             .build()
+     );
+</pre>
+
+<p>第一次尝试</p>
+<p><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Pserson</span><span lang="zh-CN" style="font-family:宋体">类和查询条件都已经定义好，现在你可以写一个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">RoboContant</span><span lang="zh-CN" style="font-family:宋体">类。一个可行的解决方法是给每一个用例定义一个方法：</span></p>
+<p><span lang="en-US" style="font-family:Consolas; color:#00B0F0">RoboContactsMethods</span><span lang="zh-CN" style="font-family:宋体">.</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">java</span></p>
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_3_7811256" name="code" class="java"> package com.example.lambda;
+    import java.util.List;
+
+    /**
+     *
+     * @author MikeW
+     */
+    public class RoboContactMethods {
+
+     public void callDrivers(List&lt;Person&gt; pl){
+       for(Person p:pl){
+         if (p.getAge() &gt;= 16){
+           roboCall(p);
+        }
+       }
+     }
+
+     public void emailDraftees(List&lt;Person&gt; pl){
+       for(Person p:pl){
+         if (p.getAge() &gt;= 18 &amp;&amp; p.getAge() &lt;= 25 &amp;&amp; p.getGender() == Gender.MALE){
+           roboEmail(p);
+         }
+       }
+     }
+
+     public void mailPilots(List&lt;Person&gt; pl){
+       for(Person p:pl){
+         if (p.getAge() &gt;= 23 &amp;&amp; p.getAge() &lt;= 65){
+           roboMail(p);
+         }
+       }
+     }
+
+     public void roboCall(Person p){
+       System.out.println(&quot;Calling &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getPhone());
+     }
+
+     public void roboEmail(Person p){
+       System.out.println(&quot;EMailing &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getEmail());
+     }
+
+     public void roboMail(Person p){
+       System.out.println(&quot;Mailing &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getAddress());
+     }
+
+   }
+</pre>
+
+<p>你可以从方法名（<span style="color:#00B0F0">callDrivers</span>, <span style="color:#00B0F0"><br>emailDraftees</span>, 和 <span style="color:#00B0F0">mailPilots</span>）中明白这些方法描述的都是一种正在发生的行为。只要传达明确的查询条件，机器人根据适当的调用做出动作。可是，这样的设计也有几个不好的地方：</p>
+<ul>
+<li>没有遵循“不要重复自己”（DRY）原则</li>
+</ul>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 每个方法都重复循环机制</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 每个方法的选择条件必须重写</p>
+<ul>
+<li>&nbsp;&nbsp; 针对每个用例好多方法需要实现</li>
+<li>代码不灵活。一旦查询条件变化，许多的代码都需要为一个更新而改变。此外，这个代码也不好维护。</li>
+</ul>
+<p>重构方法</p>
+<p>怎么修改代码呢？从查询条件开始比较好。如果测试条件能够独立放在一个方法里，将会好很多。</p>
+<p><span style="color:#00B0F0">RoboContactMethods2</span>.<span style="color:#00B0F0">java</span></p>
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_4_1715734" name="code" class="java">package com.example.lambda;
+    import java.util.List;
+
+    /**
+     *
+     * @author MikeW
+     */
+    public class RoboContactMethods2 {
+
+     public void callDrivers(List&lt;Person&gt; pl){
+       for(Person p:pl){
+         if (isDriver(p)){
+           roboCall(p);
+         }
+       }
+     }
+
+     public void emailDraftees(List&lt;Person&gt; pl){
+       for(Person p:pl){
+         if (isDraftee(p)){
+           roboEmail(p);
+         }
+       }
+     }
+
+     public void mailPilots(List&lt;Person&gt; pl){
+       for(Person p:pl){
+         if (isPilot(p)){
+           roboMail(p);
+         }
+       }
+     }
+
+     public boolean isDriver(Person p){
+       return p.getAge() &gt;= 16;
+     }
+
+     public boolean isDraftee(Person p){
+       return p.getAge() &gt;= 18 &amp;&amp; p.getAge() &lt;= 25 &amp;&amp; p.getGender() == Gender.MALE;
+     }
+
+     public boolean isPilot(Person p){
+       return p.getAge() &gt;= 23 &amp;&amp; p.getAge() &lt;= 65;
+     }
+
+     public void roboCall(Person p){
+       System.out.println(&quot;Calling &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getPhone());
+     }
+
+     public void roboEmail(Person p){
+       System.out.println(&quot;EMailing &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getEmail());
+     }
+
+     public void roboMail(Person p){
+       System.out.println(&quot;Mailing &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getAddress());
+     }
+
+   }
+</pre>
+
+<p>查询条件被封装在一个方法里，改善了之前的例子。测试条件可以复用，而且发生变化也不会影响整个类。可是它还有许多代码重复的地方，每个用例还需要一个独立的方法。有没有更好的方式将查询条件传递给这些方法呢？</p>
+<p><span style="font-weight:bold">匿名类</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">在</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式之前，匿名内部类是一种选择。例如给一个接口（</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">MyTest</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">java</span><span lang="zh-CN" style="font-family:宋体">）定义一个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Test</span><span lang="zh-CN" style="font-family:宋体">方法返回布尔&#20540;</span><span lang="en-US" style="font-family:Calibri">(</span><span lang="zh-CN" style="font-family:宋体">函数式接口</span><span lang="en-US" style="font-family:Calibri">)</span><span lang="zh-CN" style="font-family:宋体">是一个可行的解决方法。查询条件当这个方法被调用的时候被传递过去。这个接口就像下面的那样：</span></p>
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_5_8444110" name="code" class="java"> public interface MyTest&lt;T&gt; {
+   public boolean test(T t);
+ }
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">更新之后的</span><span lang="en-US" style="font-family:Calibri">robot</span><span lang="zh-CN" style="font-family:宋体">类就像这样的：</span></p>
+<p><span lang="en-US" style="font-family:Consolas; color:#00B0F0">RoboContactsAnon</span><span lang="zh-CN" style="font-family:宋体">.</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">java</span></p>
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_6_3220641" name="code" class="java">  public class RoboContactAnon {
+
+   public void phoneContacts(List&lt;Person&gt; pl, MyTest&lt;Person&gt; aTest){
+     for(Person p:pl){
+       if (aTest.test(p)){
+         roboCall(p);
+       }
+     }
+   }
+
+   public void emailContacts(List&lt;Person&gt; pl, MyTest&lt;Person&gt; aTest){
+     for(Person p:pl){
+       if (aTest.test(p)){
+         roboEmail(p);
+       }
+     }
+   }
+
+   public void mailContacts(List&lt;Person&gt; pl, MyTest&lt;Person&gt; aTest){
+     for(Person p:pl){
+       if (aTest.test(p)){
+         roboMail(p);
+       }
+     }
+   }  
+
+   public void roboCall(Person p){
+     System.out.println(&quot;Calling &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getPhone());
+   }
+
+   public void roboEmail(Person p){
+     System.out.println(&quot;EMailing &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getEmail());
+   }
+
+   public void roboMail(Person p){
+     System.out.println(&quot;Mailing &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getAddress());
+   }
+
+ }
+</pre>
+
+<p>这无疑是一种改进的方法，因为只需要三个方法来执行机械手操作。可是，有个小问题就是方法在被调用的时候不优雅。我们看下这个类的测试类：</p>
+<p><span lang="en-US" style="font-family:Consolas; color:#00B0F0">RoboCallTest03</span><span lang="zh-CN" style="font-family:宋体">.</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">java</span></p>
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_7_7681525" name="code" class="java">package com.example.lambda;
+    import java.util.List;
+
+    /**
+     * @author MikeW
+     */
+    public class RoboCallTest03 {
+
+     public static void main(String[] args) {
+
+       List&lt;Person&gt; pl = Person.createShortList();
+       RoboContactAnon robo = new RoboContactAnon();
+
+       System.out.println(&quot;\n==== Test 03 ====&quot;);
+       System.out.println(&quot;\n=== Calling all Drivers ===&quot;);
+       robo.phoneContacts(pl,
+           new MyTest&lt;Person&gt;(){
+             @Override
+             public boolean test(Person p){
+               return p.getAge() &gt;=16;
+             }
+           }
+       );
+
+       System.out.println(&quot;\n=== Emailing all Draftees ===&quot;);
+       robo.emailContacts(pl,
+           new MyTest&lt;Person&gt;(){
+             @Override
+             public boolean test(Person p){
+               return p.getAge() &gt;= 18 &amp;&amp; p.getAge() &lt;= 25 &amp;&amp; p.getGender() == Gender.MALE;
+             }
+           }
+       );
+
+       System.out.println(&quot;\n=== Mail all Pilots ===&quot;);
+       robo.mailContacts(pl,
+           new MyTest&lt;Person&gt;(){
+             @Override
+             public boolean test(Person p){
+               return p.getAge() &gt;= 23 &amp;&amp; p.getAge() &lt;= 65;
+             }
+           }
+       );
+
+     }
+   }
+</pre>
+
+<p>这就是在实际中“垂直”问题的一个很好的例子。这个代码读起来有点困难。此外，我们还必须为每一个用例写自定义的查询条件。</p>
+<p><span lang="en-US" style="font-family:Calibri; font-weight:bold">Lambda</span><span lang="zh-CN" style="font-family:宋体; font-weight:bold">表达式恰到好处</span></p>
+<p><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式能够解决上述所有的问题</span><span lang="en-US" style="font-family:Calibri">.</span></p>
+<p><span style="font-weight:bold">java.util.function</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">在上一个例子中</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">MyTest</span><span lang="zh-CN" style="font-family:宋体">函数式接口将匿名内部类传给方法</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">可是</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">不必要再单独写个接口</span><span lang="en-US" style="font-family:Calibri">.Java<br> SE 8</span><span lang="zh-CN" style="font-family:宋体">提供了</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">java</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">util</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">function</span><span lang="zh-CN" style="font-family:宋体">包里面有许多标准的函数式接口</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">这个用例中</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Predicate</span><span lang="zh-CN" style="font-family:宋体">接口符合我们的需求。</span></p>
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_8_4758567" name="code" class="java"> public interface Predicate&lt;T&gt; {
+   public boolean test(T t);
+ }
+</pre>
+
+<p><span lang="en-US" style="font-family:Consolas; color:#00B0F0">test</span><span lang="zh-CN" style="font-family:宋体">方法带有一个泛型类和返回一个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">boolean</span><span lang="zh-CN" style="font-family:宋体">&#20540;。这正好是条件选择所需要的。下面是</span><span lang="en-US" style="font-family:Consolas">robot</span><span lang="zh-CN" style="font-family:宋体">类的最后版本。</span></p>
+<p><span style="font-weight:bold">RoboContactsLambda.java</span></p>
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_9_3297871" name="code" class="java">    package com.example.lambda;
+
+    import java.util.List;
+    import java.util.function.Predicate;
+
+    /**
+     *
+     * @author MikeW
+     */
+   public class RoboContactLambda {
+     public void phoneContacts(List&lt;Person&gt; pl, Predicate&lt;Person&gt; pred){
+       for(Person p:pl){
+         if (pred.test(p)){
+           roboCall(p);
+         }
+       }
+     }
+
+     public void emailContacts(List&lt;Person&gt; pl, Predicate&lt;Person&gt; pred){
+       for(Person p:pl){
+         if (pred.test(p)){
+           roboEmail(p);
+         }
+       }
+     }
+
+     public void mailContacts(List&lt;Person&gt; pl, Predicate&lt;Person&gt; pred){
+       for(Person p:pl){
+         if (pred.test(p)){
+           roboMail(p);
+         }
+       }
+     }  
+
+     public void roboCall(Person p){
+       System.out.println(&quot;Calling &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getPhone());
+     }
+
+     public void roboEmail(Person p){
+       System.out.println(&quot;EMailing &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getEmail());
+     }
+
+     public void roboMail(Person p){
+       System.out.println(&quot;Mailing &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getAddress());
+     }
+
+   }
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">这种途径只需要三个方法，一个为联系方法。</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式传递给方法来选择符合测试条件的</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Person</span><span lang="zh-CN" style="font-family:宋体">实体。</span></p>
+<p><span style="font-weight:bold">“垂直问题”解决</span></p>
+<p><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式解决了垂直问题，任何表达式都能够很容易的复用。再来看一下经过</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式更改之后新的测试类。</span></p>
+<p><span lang="en-US" style="font-family:Consolas; color:#00B0F0">RoboCallTest04</span><span lang="zh-CN" style="font-family:宋体">.</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">java</span></p>
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_10_26248" name="code" class="java">package com.example.lambda;
+    import java.util.List;
+    import java.util.function.Predicate;
+
+    /**
+     *
+     * @author MikeW
+     */
+   public class RoboCallTest04 {
+
+     public static void main(String[] args){
+
+       List&lt;Person&gt; pl = Person.createShortList();
+       RoboContactLambda robo = new RoboContactLambda();
+
+       // Predicates
+       Predicate&lt;Person&gt; allDrivers = p -&gt; p.getAge() &gt;= 16;
+       Predicate&lt;Person&gt; allDraftees = p -&gt; p.getAge() &gt;= 18 &amp;&amp; p.getAge() &lt;= 25 &amp;&amp; p.getGender() == Gender.MALE;
+       Predicate&lt;Person&gt; allPilots = p -&gt; p.getAge() &gt;= 23 &amp;&amp; p.getAge() &lt;= 65;
+
+       System.out.println(&quot;\n==== Test 04 ====&quot;);
+       System.out.println(&quot;\n=== Calling all Drivers ===&quot;);
+       robo.phoneContacts(pl, allDrivers);
+
+       System.out.println(&quot;\n=== Emailing all Draftees ===&quot;);
+       robo.emailContacts(pl, allDraftees);
+
+       System.out.println(&quot;\n=== Mail all Pilots ===&quot;);
+       robo.mailContacts(pl, allPilots);
+
+       // Mix and match becomes easy
+       System.out.println(&quot;\n=== Mail all Draftees ===&quot;);
+       robo.mailContacts(pl, allDraftees);  
+
+       System.out.println(&quot;\n=== Call all Pilots ===&quot;);
+       robo.phoneContacts(pl, allPilots);
+
+     }
+   }
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">注意每一组都设置了</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Predicate</span><span lang="zh-CN" style="font-family:宋体"> ：</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">allDrivers</span><span lang="zh-CN" style="font-family:宋体">,</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">allDraftees</span><span lang="zh-CN" style="font-family:宋体">,<br> 和</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">allPilots<br></span><span lang="zh-CN" style="font-family:宋体; color:#00B0F0">。</span><span lang="zh-CN" style="font-family:宋体">你可以传任意一个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Predicate</span><span lang="zh-CN" style="font-family:宋体"> 接口给这些联系方法。代码紧凑很容易读而且没有重复。</span></p>
+<p><span lang="en-US" style="font-family:Calibri"></span></p>
+<p>本章源码</p>
+<p><span lang="en-US" style="font-family:Calibri">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="http://www.oracle.com/webfolder/technetwork/tutorials/obe/java/Lambda-QuickStart/examples/RoboCallExample.zip" target="_blank" rel="external">点击打开链接</a></span></p>
+<p></p>
+<pre><code><span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+<span class="code">    作者：qarkly112649 发表于2014/2/25 22:18:27 [原文链接](http://blog.csdn.net/qarkly112649/article/details/19935375)</span>
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+<span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+阅读：291 评论：0 [<span class="link_label">查看评论</span>](<span class="link_url">http://blog.csdn.net/qarkly112649/article/details/19935375#comments</span>)
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+</code></pre>
+      
+    </div>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/03/05/译-JavaSE-8-Lambda-快速学习（三）/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption"><</strong>
+      <div class="article-nav-title">
+        
+          [译]JavaSE 8 :Lambda 快速学习（三）
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/02/19/译-JavaSE-8-Lambda-快速学习（一）/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">[译]JavaSE 8 :Lambda 快速学习（一）</div>
+      <strong class="article-nav-caption">></strong>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<div class="share">
+	<!-- JiaThis Button BEGIN -->
+	<div class="jiathis_style">
+		<span class="jiathis_txt">分享到：</span>
+		<a class="jiathis_button_tsina"></a>
+		<a class="jiathis_button_cqq"></a>
+		<a class="jiathis_button_douban"></a>
+		<a class="jiathis_button_weixin"></a>
+		<a class="jiathis_button_tumblr"></a>
+		<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+	</div>
+	<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=1405949716054953" charset="utf-8"></script>
+	<!-- JiaThis Button END -->
+</div>
+
+
+
+<div class="duoshuo">
+	<!-- 多说评论框 start -->
+	<div class="ds-thread" data-thread-key="译-JavaSE-8-Lambda-快速学习（二）" data-title="[译]JavaSE 8 :Lambda 快速学习（二）" data-url="http://qarkly@github.com/2014/02/25/译-JavaSE-8-Lambda-快速学习（二）/"></div>
+	<!-- 多说评论框 end -->
+	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+	<script type="text/javascript">
+	var duoshuoQuery = {short_name:"true"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		 || document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+	<!-- 多说公共JS代码 end -->
+</div>
+
+
+
+
+</div>
+      <footer id="footer">
+  <div class="outer">
+    <div id="footer-info">
+    	<div class="footer-left">
+    		&copy; 2015 qarkly
+    	</div>
+      	<div class="footer-right">
+      		<a href="http://hexo.io/" target="_blank">Hexo</a>  Theme <a href="https://github.com/litten/hexo-theme-yilia" target="_blank">Yilia</a> by Litten
+      	</div>
+    </div>
+  </div>
+</footer>
+    </div>
+    
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css" type="text/css">
+
+
+<script>
+	var yiliaConfig = {
+		fancybox: true,
+		mathjax: true,
+		animate: true,
+		isHome: false,
+		isPost: true,
+		isArchive: false,
+		isTag: false,
+		isCategory: false,
+		open_in_new: false
+	}
+</script>
+<script src="http://7.url.cn/edu/jslib/comb/require-2.1.6,jquery-1.9.1.min.js" type="text/javascript"></script>
+<script src="/js/main.js" type="text/javascript"></script>
+
+
+
+
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+    tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+        processEscapes: true,
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    }
+});
+
+MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';                 
+    }       
+});
+</script>
+
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,1731 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title><![CDATA[qarkly的博客]]></title>
+  <subtitle><![CDATA[个人技术博客]]></subtitle>
+  <link href="/atom.xml" rel="self"/>
+  <link href="http://qarkly@github.com/"/>
+  <updated>2015-08-17T15:08:38.330Z</updated>
+  <id>http://qarkly@github.com/</id>
+  
+  <author>
+    <name><![CDATA[qarkly]]></name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title><![CDATA[[译]Jackrabbit是如何工作的]]></title>
+    <link href="http://qarkly@github.com/2015/08/17/%E8%AF%91-Jackrabbit%E6%98%AF%E5%A6%82%E4%BD%95%E5%B7%A5%E4%BD%9C%E7%9A%84/"/>
+    <id>http://qarkly@github.com/2015/08/17/译-Jackrabbit是如何工作的/</id>
+    <published>2015-08-17T14:41:48.000Z</published>
+    <updated>2015-08-17T15:08:38.330Z</updated>
+    <content type="html"><![CDATA[<p>下面的图片解释了当一个用户使用JCR API修改内容仓库时，哪些Jackrabbit的部件会被使用到。这是一个简单而且常用的操作，但会涉及到Jackrabbit的大部分组件。请注意这些实现的架构JCR并没有授权，但是是直接基于JCR设计的</p>
+<p><img src="https://cloud.githubusercontent.com/assets/6206101/9248498/d3dacb6e-41ee-11e5-8639-c3b0644f6bb5.png" alt="image"></p>
+<p>下面是写或修改内容仓库时依次使用到的组件和它们各自的功能</p>
+<ul>
+<li><p>Transient Item State Manager 暂时项状态管理器<br>一旦内容项被会话（session）读取，它们就会被Transient ISM缓存。当这些内容项被修改，在这个所谓的“暂时”空间里这些修改只对同一个session是可见的。</p>
+</li>
+<li><p>Transactional Item State Manager 事务项状态管理器<br>当应用使用JCR的Item.save() 或Session.save() 对这些修改项持久化时。这些暂时项被会提升到Transactional ISM。这些修改仍然只在这事务中是可见的，这意味直到被提交前它们对其他session依然是不可见的。如果内容仓库不是运行在XA环境下，这些提交是隐形的。</p>
+</li>
+<li><p>Shared Item State Manager 共享项状态管理器<br>一旦事务被提交，Shared ISM会接受到更新日志并把这些更新推送到所有登录到这一工作空间的session。这就意味被其他session缓存和引用到的所有项状态都被会通知，也可能会被更新或者变得无效。Shared ISM 也会触发观察机制并将更新日志传递给这个工作空间配置的持久化管理器。</p>
+</li>
+<li><p>Persistence Manager 持久化管理器<br>Persistence Manager会将Shared ISM传递过来的更新日志中的所有项进行持久化操作。持久化管理器简单、快速，事务接口是低层次的不需要理解复杂的仓库操作，只需在底层上根据给定项的ID能够持久化和恢复</p>
+</li>
+<li><p>Observation 观察机制<br>当事务被提交，Shared ISM会出发观察机制。这样允许应用在工作空间内异步订阅这些改变。Jackrabbit也提供了同步的观察机制，但这不属于JCR标准之内</p>
+</li>
+<li><p>Query Manager/Index 查询管理/索引<br>通过异步观察事件，指示Query Manager索引到新添加项或修改项。内容仓库索引要比经典的关系型数据库索引要复杂的多，因为它要处理内容仓库的特性，比如项的层级，节点继承还有全文检索</p>
+</li>
+</ul>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>下面的图片解释了当一个用户使用JCR API修改内容仓库时，哪些Jackrabbit的部件会被使用到。这是一个简单而且常用的操作，但会涉及到Jackrabbit的大部分组件。请注意这些实现的架构JCR并没有授权，但是是直接基于JCR设计的</p>
+<p><img src="]]>
+    </summary>
+    
+      <category term="Jackrabbit" scheme="http://qarkly@github.com/tags/Jackrabbit/"/>
+    
+      <category term="内容仓库" scheme="http://qarkly@github.com/tags/%E5%86%85%E5%AE%B9%E4%BB%93%E5%BA%93/"/>
+    
+  </entry>
+  
+  <entry>
+    <title></title>
+    <link href="http://qarkly@github.com/2015/08/17/%E8%AF%91-Jackrabbit%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/"/>
+    <id>http://qarkly@github.com/2015/08/17/译-Jackrabbit并发控制/</id>
+    <published>2015-08-16T16:00:00.000Z</published>
+    <updated>2015-08-17T15:11:27.007Z</updated>
+    <content type="html"><![CDATA[<p>title: ‘[译]Jackrabbit并发控制’<br>date: 2015-08-17 22:57:28<br>tags: [Jackrabbit,内容仓库]<br>catagories: 编程  </p>
+<hr>
+<p>Apache Jackrabbit内部的并发模型相当复杂，在JackRabbit 1.x发布周期内报告并修复了大量的死锁问题。这篇文章是设计和code review的成果，旨在主动预防其他类似的问题</p>
+<p>此文是关于Jackrabbit的内部并发和同步机制模型，不是关于JCR的锁特性。注意此文是从架构层面审阅并发控制，并不关注像个别类或组件的多线程安全之类的问题。<br>此review是基于JackRabbit 1.5版本的默认版本</p>
+<h2 id="架构背景">架构背景</h2><p><img src="https://cloud.githubusercontent.com/assets/6206101/9248520/f6964ade-41ee-11e5-8b62-1762514fe81f.png" alt="image"></p>
+<p>从并发控制方面，Jackrabbit 架构大概可以分成下面的五个层次<br>1.集群<br>2.仓库<br>3.工作空间<br>4.会话<br>5.事务</p>
+<ul>
+<li>集群<br>集群层需要在一个或者多个集群节点恰巧共享它们的内容时，这些节点可以视为独立的仓库，处理这些同步更改。并发控制跨越多个集群节点是通过使用一个单一的写入锁来实现的，这锁是节点在提交任何更改到共享状态时都需要先获取到的。另一方面所有的集群节点都可以在不需要任何明确的同步措施下并行读取已经共享的内容。注意既然所有的集群节点共享一把锁，那么在节点之间就不会发生任何死锁的情况。一个发生死锁的节点仍然会潜在的阻碍写入整个集群，但是如果每个节点本身都是无死锁的，那么集群功能就不会添加任何新的死锁场景</li>
+<li>仓库<br>仓库层负责所有全局仓库状态比如节点类型注册和版本存储。所有仓库范围的组件都有他们自己的同步机制而不是共享一把全局仓库锁。从并发控制视角来看最值得注意的组件就是版本存储，实际上它有两种锁机制；一个VersionManagerImpl负责高层次的版本操作，另一个底层的SharedItemStateManager为了控制访问底层的持久化机制。</li>
+<li>工作空间<br>仓库由一个或者多个工作空间组成，工作空间包含这个仓库中正常的内容树状结构。每一个工作空间由一些像持久化机制和查询索引组成。持久化机制通过Shared ISM（共享项状态管理器）和PersistenceManager（持久化管理器）建立的，Shared ISM会控制所有项的操作，PersistenceManager把所有项进行永久存储。大多数的持久化管理使用Java同步和其他锁机制进行并发控制，但是因为它们通常不会与仓库的其他部分相互影响，所以从全局并发角度来看它们并不是关键。另一方面，使用读写锁的SharedISM是关键因素尤其它是与仓库范围的版本存储交互的途径。注意自从Jackrabbit 1.4就可以配置SharedISM的锁策略，通过使用更细粒度的锁配置，允许并发写访问内容树的不同部分。本文关注于默认情况只有一个简单的SharedISM锁，但是从锁角度来看更细粒度的情况相当于拥有更多工作空间因此本文的结论仍然是适用的。</li>
+<li>会话<br>每一个工作空间可以被零个或多个JCR 会话访问。每个会话拥有一个暂时空间来存储在会话中尚未保存的更改。因为暂时空间是在会话的内部（其他会话不可见）和会话应该每次只被一个线程访问，我们几乎不用关心并发和会话使用会有关联。可是值得注意在许多情况下会话的线程安全需求，Jackrabbit并没有明确地保证，所以一个客户端无论是有意还是无意地在多并发线程中使用单独的一个会话可能会破坏会话的内部状态。</li>
+<li>事务<br>Jackrabbit处理事务是通过把所有项的操作（如保存暂时更新和直接工作空间更新以及版本和锁操作）封装到一个可以说是更大的暂时空间，当事务被提交时再把它持久化。在Jackrabbit中没有事务锁，但是事务支持仍然从根本上改变了Jackrabbit并发控制比如它基本上通过使用更大的提交操作取代了所有的写操作（还有相关的锁）。只有在XA事务的环境下，事务模式才会被激活。</li>
+</ul>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>title: ‘[译]Jackrabbit并发控制’<br>date: 2015-08-17 22:57:28<br>tags: [Jackrabbit,内容仓库]<br>catagories: 编程  </p>
+<hr>
+<p>Apache Jackrabbit内部的并发]]>
+    </summary>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[Hello World]]></title>
+    <link href="http://qarkly@github.com/2015/08/15/hello-world/"/>
+    <id>http://qarkly@github.com/2015/08/15/hello-world/</id>
+    <published>2015-08-15T09:58:45.993Z</published>
+    <updated>2015-08-15T09:58:45.993Z</updated>
+    <content type="html"><![CDATA[<p>今日把以前博客都迁移过来了，对于个人博客只所以选择hexo就是因为特意中意这个主题。许多选择何尝不是，<em>just I Like</em></p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>今日把以前博客都迁移过来了，对于个人博客只所以选择hexo就是因为特意中意这个主题。许多选择何尝不是，<em>just I Like</em></p>
+]]>
+    </summary>
+    
+      <category term="生活" scheme="http://qarkly@github.com/tags/%E7%94%9F%E6%B4%BB/"/>
+    
+      <category term="随笔" scheme="http://qarkly@github.com/tags/%E9%9A%8F%E7%AC%94/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[[原]windows和Linux查看端口]]></title>
+    <link href="http://qarkly@github.com/2014/07/07/%E5%8E%9F-windows%E5%92%8CLinux%E6%9F%A5%E7%9C%8B%E7%AB%AF%E5%8F%A3/"/>
+    <id>http://qarkly@github.com/2014/07/07/原-windows和Linux查看端口/</id>
+    <published>2014-07-07T07:53:16.000Z</published>
+    <updated>2015-08-15T10:04:41.095Z</updated>
+    <content type="html"><![CDATA[<div><span style="">Windows平台</span><br><br>&gt; <span style="">在windows命令行窗口下执行：</span><br>&gt;<br>&gt; <span style="">1.查看所有的端口占用情况&nbsp;</span><br>&gt;<br>&gt; <div style="">&nbsp; netstat -ano</div><br>&gt;<br>&gt; <div style="">2.查看指定端口的占用情况</div><br>&gt;<br>&gt; <div style="">&nbsp; netstat -aon|findstr &quot;9050&quot;</div><br>&gt;<br>&gt; <div style="">3.查看PID对应的进程</div><br>&gt;<br>&gt; <div style="">&nbsp; tasklist|findstr &quot;9050&quot;</div><br>&gt;<br>&gt; <div style="">4.结束该进程</div><br>&gt;<br>&gt; &nbsp; taskkill /f /t /im xx.exe<br><div style=""><br><br>Linux查看端口</div><br></div>
+
+<div><br>&gt; <img src="http://img.blog.csdn.net/20140707155011687?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcWFya2x5MTEyNjQ5/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt=""><br>&gt;<br>&gt; <div>关闭端口：关闭相应的应用程序就解决端口被占用</div><br>&gt;<br>&gt; <div>如：</div><br>&gt;<br>&gt; <div>&nbsp; &nbsp;“kill -9 PID”</div><br>&gt;<br>&gt; <div>&nbsp; &nbsp; &nbsp;通过&quot;netstat -anp | grep ssh&quot;</div><br>&gt;<br>&gt; 有显示：&nbsp;&nbsp;&nbsp; tcp 0 127.0.0.1:2121 0.0.0.0:* LISTEN 7546/ssh<br>&gt;<br>&gt; 则：&nbsp;&nbsp;&nbsp; &quot;kill -9 7546&quot;<br><div style=""><br><br></div><br></div>
+
+<pre><code><span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+<span class="code">    作者：qarkly112649 发表于2014/7/7 15:53:16 [原文链接](http://blog.csdn.net/qarkly112649/article/details/37516533)</span>
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+<span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+阅读：102 评论：0 [<span class="link_label">查看评论</span>](<span class="link_url">http://blog.csdn.net/qarkly112649/article/details/37516533#comments</span>)
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+</code></pre>]]></content>
+    <summary type="html">
+    <![CDATA[<div><span style="">Windows平台</span><br><br>&gt; <span style="">在windows命令行窗口下执行：</span><br>&gt;<br>&gt; <span style="">1.查看所有的端口占用情况&nbsp;<]]>
+    </summary>
+    
+      <category term="系统知识" scheme="http://qarkly@github.com/tags/%E7%B3%BB%E7%BB%9F%E7%9F%A5%E8%AF%86/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[[原]mina中责任链模式的实现]]></title>
+    <link href="http://qarkly@github.com/2014/07/07/%E5%8E%9F-mina%E4%B8%AD%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F%E7%9A%84%E5%AE%9E%E7%8E%B0/"/>
+    <id>http://qarkly@github.com/2014/07/07/原-mina中责任链模式的实现/</id>
+    <published>2014-07-07T01:52:26.000Z</published>
+    <updated>2015-08-15T10:04:22.680Z</updated>
+    <content type="html"><![CDATA[<div><br><br><span style="">1.责任链模式在mina中有重要的作用，其中Filter机制就是基于责任链实现的，再来回顾mina框架组成</span><br><br><span style=""><img src="http://img.blog.csdn.net/20140707093415046?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcWFya2x5MTEyNjQ5/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt=""></span><br><br><span style=""></span><br><br><div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">从上图看到消息的接受从IoService层先经过Filter层过滤处理后最后交给IoHander，消息的发送则是反过来从IoHander层经过Filter层再到IoService层。</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">我们来想想这样做的好处:</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">第一点就是可以把消息从原始字节封装成对象方便处理，或者从对象到原始字节，那这就是decode和encode过程</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">第二点过滤消息，业务层只需要处理感兴趣的消息</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">当然还有其他…</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">再来想想Filter层是怎么实现的呢</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">从图中看到接收消息和发送消息经过Filter层是相反处理的，那么每个Filter就必须知道前一个和后一个Filter，我们就很容易想到了双向链表结构。</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">没错Filter层就是用双向链表实现的，那么让我们来看看Filter层具体是如何实现，即mina中责任链模式的实现<br><br></span><br><div><span style="">2.先来看下mina的filterchain包结构</span></div><br><img src="http://img.blog.csdn.net/20140707094005250?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcWFya2x5MTEyNjQ5/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt=""><br><br><div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">Filter层的每个filter都是对上图IoFilter接口的实现，我们将具体讲解IoFilter，IoFilterChain，DefaultIoFilterChain这几个类</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">IoFilterChainBuilder接口和DefaultIoFilterChainBuilder实现不再细讲，从字面意思就是IoFilterChain的建造者</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">IoFilterEvent是代表filter事件，IoFilterLifeCycleException是指filter中出现循环链表异常</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">下面的图是我们要重点讲解的几个类的关系</span></div><br></div><br><img src="http://img.blog.csdn.net/20140707094718437?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcWFya2x5MTEyNjQ5/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt=""><br><br><div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">我们重点讲解的只有四个类，为什么会出现这么多的类呢，有些类使内部实现，不太好表示就都画出来了，先来说明下</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">IoFilter接口：NextFilter接口是其内部接口</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">IoFilterAdapter类：对IoFilter接口的实现，是所有Filter的基类</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">IoFilterChain接口：Entry接口是其内部接口</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">DefaultIoFilterChain类：是对IoFilterChain接口的实现，有EntryImpl，HeadFilter，TailFilter三个内部类，其中EntryImpl类中又有NextFilter接口的内部实现</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">还需要说明下：IoFilter还有相关接口就写了两个方法，一个接受消息触发的方法还有一个是发送消息触发的方法，剩下的都是这两类消息处理方法就不表示了</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">HeadFilter类只对发送消息处理方法重载，TailFilter类只对接受消息处理方法重载，想一想为什么？再想想为什么用内部类来实现？</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">从上图看到EntryImp类是重点，我们就来看看EntryImpl类的实现</span></div><br></div><br><pre code_snippet_id="419654" snippet_file_name="blog_20140707_1_2592031" name="code" class="java">private class EntryImpl implements Entry {<br>        private EntryImpl prevEntry ;<br><br>        private EntryImpl nextEntry ;<br><br>        private final String name;<br><br>        private IoFilter filter ;<br><br>        private final NextFilter nextFilter;<br><br>        private EntryImpl(EntryImpl prevEntry, EntryImpl nextEntry, String name, IoFilter filter) {<br>            if (filter == null) {<br>                throw new IllegalArgumentException(&quot;filter&quot;);<br>            }<br>            if (name == null) {<br>                throw new IllegalArgumentException(&quot;name&quot;);<br>            }<br><br>            this.prevEntry = prevEntry;<br>            this.nextEntry = nextEntry;<br>            this.name = name;<br>            this.filter = filter;<br>            this.nextFilter = new NextFilter() {<br><br>                public void sessionOpened(IoSession session) {<br>                    Entry nextEntry = EntryImpl. this.nextEntry ;<br>                    callNextSessionOpened(nextEntry, session);<br>                }<br><br>                public void filterWrite(IoSession session, WriteRequest writeRequest) {<br>                    Entry nextEntry = EntryImpl. this.prevEntry ;<br>                    callPreviousFilterWrite(nextEntry, session, writeRequest);<br>                }<br><br>            };<br>        }<br></pre><br><div><br><div style=""><br><div><span style="font-family:YaHei Consolas Hybrid">从EntryImpl类的构造方法看到，EntryImpl中保持对上一个节点和下一个节点引用，双向链表结构，name即过滤层名称，filter即过滤层的具体实现，而nextFilter是在构造方法中的内部实现。</span></div><br></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">我们再来看看DefaultIoFilterChain的实现</span></div><br></div><br><pre code_snippet_id="419654" snippet_file_name="blog_20140707_2_3573549" name="code" class="java">public class DefaultIoFilterChain implements IoFilterChain {<br> /<strong> The associated session */<br>    private final AbstractIoSession session ;<br><br>    private final Map&lt;String, Entry&gt; name2entry = new ConcurrentHashMap&lt;String, Entry&gt;();<br><br>    /</strong> The chain head <em>/<br>    private final EntryImpl head ;<br><br>    /** The chain tail </em>/<br>    private final EntryImpl tail ;<br><br>    public DefaultIoFilterChain(AbstractIoSession session) {<br>        if (session == null) {<br>            throw new IllegalArgumentException(&quot;session&quot;);<br>        }<br><br>        this.session = session;<br>        head = new EntryImpl(null, null, &quot;head&quot; , new HeadFilter ());<br>        tail = new EntryImpl(head, null, &quot;tail&quot;, new TailFilter());<br>        head.nextEntry = tail;<br>    }<br></pre><br><div><br><div style=""><br><div><span style="font-family:YaHei Consolas Hybrid">从上图看到，head顾名思义就是头节点，tail即尾节点，两个节点在构造方法中已经构造好了，head里装的是HeadFilter，tail中即TailFilter。上面我们说到HeadFilter只实现发送消息处理方法，TailFilter只实现接受消息处理方法。</span></div><br></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">想一想便得知，HeadFilter是发送消息最后的处理节点，TailFilter是接受消息最后的处理节点。最后的节点处理就是将写消息交给Io线程处理，将读消息交给IoHander的业务层处理。所以说HeadFilter和TailFilter只需对某一方消息处理，反面消息默认交给下一个节点处理。</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">HeadFilter</span></div><br></div><br><pre code_snippet_id="419654" snippet_file_name="blog_20140707_3_5351456" name="code" class="java"> private class HeadFilter extends IoFilterAdapter {<br>        @SuppressWarnings(&quot;unchecked&quot; )<br>        @Override<br>        public void filterWrite(NextFilter nextFilter, IoSession session, WriteRequest writeRequest) throws Exception {<br><br>            AbstractIoSession s = (AbstractIoSession) session;<br><br>            // Maintain counters.<br>            if (writeRequest.getMessage() instanceof IoBuffer) {<br>                IoBuffer buffer = (IoBuffer) writeRequest.getMessage();<br>                // I/O processor implementation will call buffer.reset()<br>                // it after the write operation is finished, because<br>                // the buffer will be specified with messageSent event.<br>                buffer.mark();<br>                int remaining = buffer.remaining();<br><br>                if (remaining == 0) {<br>                    // Zero-sized buffer means the internal message<br>                    // delimiter.<br>                    s.increaseScheduledWriteMessages();<br>                } else {<br>                  s.increaseScheduledWriteBytes(remaining);<br>                }<br>            } else {<br>                s.increaseScheduledWriteMessages();<br>            }<br><br>            WriteRequestQueue writeRequestQueue = s.getWriteRequestQueue();<br><br>            if (!s.isWriteSuspended()) {<br>                if (writeRequestQueue.size() == 0) {<br>                    // We can write directly the message<br>                    s.getProcessor().write(s, writeRequest);<br>                } else {<br>                    s.getWriteRequestQueue().offer(s, writeRequest);<br>                    s.getProcessor().flush(s);<br>                }<br>            } else {<br>                s.getWriteRequestQueue().offer(s, writeRequest);<br>            }<br>        }<br>}<br></pre><br><br><div><span style="">TailFilter</span></div><br><pre code_snippet_id="419654" snippet_file_name="blog_20140707_4_9081210" name="code" class="java"> private static class TailFilter extends IoFilterAdapter {<br>@Override<br>        public void sessionOpened(NextFilter nextFilter, IoSession session) throws Exception {<br>            session.getHandler().sessionOpened(session);<br>        }<br>}<br></pre><br><br><div><span style="">下面我们来看看sessionOpen消息处理的完整过程，首先是IoFilterChain收到这个消息触发</span><span style="">fireSessionOpened方法</span></div><br><pre code_snippet_id="419654" snippet_file_name="blog_20140707_5_1174762" name="code" class="java">  public void fireSessionOpened() {<br>        Entry head = this.head ;<br>        callNextSessionOpened(head, session);<br>    }<br><br>    private void callNextSessionOpened(Entry entry, IoSession session) {<br>        try {<br>            IoFilter filter = entry.getFilter();<br>            NextFilter nextFilter = entry.getNextFilter();<br>            filter.sessionOpened(nextFilter, session);<br>        } catch (Throwable e) {<br>            fireExceptionCaught(e);<br>        }<br>    }<br></pre><br><br><div><br><div style=""><br><div><span style="font-family:YaHei Consolas Hybrid"><span style="background-color:rgb(212,212,212)">fireSessionOpened方法获取当前的头节点，然后调用</span><span style="">callNextSessionOpened方法，而</span><span style="">callNextSessionOpened方法是从entry中获取filter和nextfitler，触发filter的</span><span style="">sessionOpened方法，同时将nextfilter作为参数传进去，而filter层如果对这个消息感兴趣可以处理完成后调用nextfilter的</span><span style="">sessionOpened方法，不感兴趣的话，可能消息到此就结束了。</span></span></div><br></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid"><span style="">再回到上面EntryImpl中对NextFilter的实现，我们看到NextFilter收到sessionOpen消息，获取当前节点的下一个节点，然后触发IoFilterChain的</span><span style="">callNextSessionOpened方法，即上图所示。再然后就是传递到下一节点处理，要么filter层拦截过滤结束，要不就是传到最后一层由TailFilter交给业务层处理。而写消息恰好相反，nextFilter是获取前一个节点，这就实现了双向过滤的功能。</span></span></div><br><div style=""><span style=""><span style="font-family:YaHei Consolas Hybrid">到这我们就明白了为什么EntryImpl还有NextFilter选择内部类实现了。</span></span></div><br><div style=""><span style=""><span style="font-family:YaHei Consolas Hybrid">NextFilter其实是起到中转站的作用，收到Reveceive消息转交给后一节点，收到Send消息转交给前一个消息。那我们再来想想为什么要用NextFilter来作为中转呢？我想应该是接口隔离的原则。Filter只需要关心如何处理接受到的消息，至于如何转交到下一个Filter不应该由他实现。</span></span></div><br><div style=""><span style=""><span style="font-family:YaHei Consolas Hybrid">至此Mina的责任链实现就已经讲完了，其余细节的东西由读者自己体会吧，在此思考下</span></span></div><br><div style=""><span style=""><span style="font-family:YaHei Consolas Hybrid">IoFilterChain是如何检测链表中是否有环呢？</span></span></div><br></div>
+
+<p></p></div><br></div><p></p>
+<p></p></div><p></p>
+<pre><code><span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+<span class="code">    作者：qarkly112649 发表于2014/7/7 9:52:26 [原文链接](http://blog.csdn.net/qarkly112649/article/details/37498251)</span>
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+<span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+阅读：631 评论：0 [<span class="link_label">查看评论</span>](<span class="link_url">http://blog.csdn.net/qarkly112649/article/details/37498251#comments</span>)
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+</code></pre>]]></content>
+    <summary type="html">
+    <![CDATA[<div><br><br><span style="">1.责任链模式在mina中有重要的作用，其中Filter机制就是基于责任链实现的，再来回顾mina框架组成</span><br><br><span style=""><img src="http://img.blog.csd]]>
+    </summary>
+    
+      <category term="java" scheme="http://qarkly@github.com/tags/java/"/>
+    
+      <category term="mina" scheme="http://qarkly@github.com/tags/mina/"/>
+    
+      <category term="设计模式" scheme="http://qarkly@github.com/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/"/>
+    
+      <category term="责任链" scheme="http://qarkly@github.com/tags/%E8%B4%A3%E4%BB%BB%E9%93%BE/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[[原]快排的java两种实现方式]]></title>
+    <link href="http://qarkly@github.com/2014/06/29/%E5%8E%9F-%E5%BF%AB%E6%8E%92%E7%9A%84java%E4%B8%A4%E7%A7%8D%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F/"/>
+    <id>http://qarkly@github.com/2014/06/29/原-快排的java两种实现方式/</id>
+    <published>2014-06-29T09:24:20.000Z</published>
+    <updated>2015-08-15T10:05:00.087Z</updated>
+    <content type="html"><![CDATA[<p>快排是最基础的几个排序算法之一，今天再来回顾下</p>
+<pre code_snippet_id="410563" snippet_file_name="blog_20140629_1_8389237" name="code" class="java">public class QuickSort {
+
+    public static void quickSort(int[] array){
+        if(array != null){
+            quickSort(array, 0, array.length-1);
+        }
+    }
+
+    private static void quickSort(int[] array,int beg,int end){
+        if(beg &gt;= end || array == null)
+            return;
+        int p = partition(array, beg, end);
+        quickSort(array, beg, p-1);
+        quickSort(array, p+1, end);
+    }
+}</pre>
+
+<p>上面就是快排主要的框架，最重要就是partition方法，它是划分并找到下次分割排序的位置p</p>
+<p>常用的partition方法</p>
+<pre code_snippet_id="410563" snippet_file_name="blog_20140629_2_9337736" name="code" class="java">private static int partition(int[] array, int beg, int end) {
+&#160;&#160; &#160;&#160;&#160; &#160;int first = array[beg];
+&#160;&#160; &#160;&#160;&#160; &#160;int i = beg, j = end;
+&#160;&#160; &#160;&#160;&#160; &#160;while (i &lt; j) {
+&#160;&#160; &#160;&#160;&#160; &#160;&#160;&#160; &#160;while (array[i] &lt;= first &amp;&amp; i &lt; end) {
+&#160;&#160; &#160;&#160;&#160; &#160;&#160;&#160; &#160;&#160;&#160; &#160;i++;
+&#160;&#160; &#160;&#160;&#160; &#160;&#160;&#160; &#160;}
+&#160;&#160; &#160;&#160;&#160; &#160;&#160;&#160; &#160;while (array[j] &gt; first &amp;&amp; j &gt;= beg) {
+&#160;&#160; &#160;&#160;&#160; &#160;&#160;&#160; &#160;&#160;&#160; &#160;j--;
+&#160;&#160; &#160;&#160;&#160; &#160;&#160;&#160; &#160;}
+&#160;&#160; &#160;&#160;&#160; &#160;&#160;&#160; &#160;if (i &lt; j) {
+&#160;&#160; &#160;&#160;&#160; &#160;&#160;&#160; &#160;&#160;&#160; &#160;array[i] = array[i] ^ array[j];
+&#160;&#160; &#160;&#160;&#160; &#160;&#160;&#160; &#160;&#160;&#160; &#160;array[j] = array[i] ^ array[j];
+&#160;&#160; &#160;&#160;&#160; &#160;&#160;&#160; &#160;&#160;&#160; &#160;array[i] = array[i] ^ array[j];
+&#160;&#160; &#160;&#160;&#160; &#160;&#160;&#160; &#160;}
+&#160;&#160; &#160;&#160;&#160; &#160;}
+&#160;&#160; &#160;&#160;&#160; &#160;if (j != beg) {
+&#160;&#160; &#160;&#160;&#160; &#160;&#160;&#160; &#160;array[j] = array[beg] ^ array[j];
+&#160;&#160; &#160;&#160;&#160; &#160;&#160;&#160; &#160;array[beg] = array[beg] ^ array[j];
+&#160;&#160; &#160;&#160;&#160; &#160;&#160;&#160; &#160;array[j] = array[beg] ^ array[j];
+&#160;&#160; &#160;&#160;&#160; &#160;}
+&#160;&#160; &#160;&#160;&#160; &#160;return j;
+&#160;&#160; &#160;}</pre>
+
+<p>第二种partition方法实现</p>
+<pre code_snippet_id="410563" snippet_file_name="blog_20140629_3_559236" name="code" class="java">private static int partition(int[] array,int beg,int end){
+        int last = array[end];
+        int i = beg -1;
+        for (int j = beg; j &lt;= end-1; j++) {
+            if(array[j] &lt;= last){
+                i++;
+                if(i != j){
+                    array[i] = array[i]^array[j];
+                    array[j] = array[i]^array[j];
+                    array[i] = array[i]^array[j];
+                }
+            }
+        }
+        if((i+1) != end){
+            array[i+1] = array[i+1]^array[end];
+            array[end] = array[i+1]^array[end];
+            array[i+1] = array[i+1]^array[end];
+        }
+        return i+1;
+    }</pre>
+
+<p>个人比较喜欢第二种写法，比较简洁</p>
+<pre><code><span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+<span class="code">    作者：qarkly112649 发表于2014/6/29 17:24:20 [原文链接](http://blog.csdn.net/qarkly112649/article/details/35794097)</span>
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+<span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+阅读：2000 评论：0 [<span class="link_label">查看评论</span>](<span class="link_url">http://blog.csdn.net/qarkly112649/article/details/35794097#comments</span>)
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+</code></pre>]]></content>
+    <summary type="html">
+    <![CDATA[<p>快排是最基础的几个排序算法之一，今天再来回顾下</p>
+<pre code_snippet_id="410563" snippet_file_name="blog_20140629_1_8389237" name="code" class="java">public cla]]>
+    </summary>
+    
+      <category term="java" scheme="http://qarkly@github.com/tags/java/"/>
+    
+      <category term="算法" scheme="http://qarkly@github.com/tags/%E7%AE%97%E6%B3%95/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[[原]红黑树的java实现]]></title>
+    <link href="http://qarkly@github.com/2014/06/29/%E5%8E%9F-%E7%BA%A2%E9%BB%91%E6%A0%91%E7%9A%84java%E5%AE%9E%E7%8E%B0/"/>
+    <id>http://qarkly@github.com/2014/06/29/原-红黑树的java实现/</id>
+    <published>2014-06-29T07:28:37.000Z</published>
+    <updated>2015-08-15T09:59:28.458Z</updated>
+    <content type="html"><![CDATA[<p>红黑树的原理以及算法见文章：<a href="http://blog.csdn.net/v_JULY_v/article/details/6105630" target="_blank" rel="external">http://blog.csdn.net/v_JULY_v/article/details/6105630</a></p>
+<p>链接文章中已经把原理讲得很清楚了，本文只讨论java来实现红黑树，主要是链接文章中的算法实现，或者说是算法导论中的算法实现吧</p>
+<p>红黑树的节点定义:</p>
+<pre code_snippet_id="410451" snippet_file_name="blog_20140629_1_834874" name="code" class="java">
+
+package org.algorithm.RedBlackTree;
+
+/**
+* Created with IntelliJ IDEA.
+* User: qarkly
+* Date: 14-6-8
+* Time: 下午11:16
+* To change this template use File | Settings | File Templates.
+*/
+public class RedBlackNode {
+public static final byte RED = 0x00;
+public static final byte BLACK = 0x01;
+public static RedBlackNode NILL = new RedBlackNode(BLACK);
+
+RedBlackNode parent;
+RedBlackNode left;
+RedBlackNode right;
+Comparable element;
+byte color;
+
+public RedBlackNode(RedBlackNode left,RedBlackNode right,Comparable element){
+this.left = left;
+this.right = right;
+this.element = element;
+color = RED;
+}
+
+public RedBlackNode(byte color){
+this.color = color;
+}
+
+public RedBlackNode(Comparable element,byte color){
+this.color = color;
+this.element = element;
+this.left = NILL;
+this.right = NILL;
+}
+
+}
+
+</pre>
+
+<p>左旋操作实现：</p>
+<pre code_snippet_id="410451" snippet_file_name="blog_20140629_2_5786126" name="code" class="java"> /**
+* 左旋操作
+* @param node
+*/
+private void leftRotate(RedBlackNode node){
+if(node == null || node == RedBlackNode.NILL)
+return;
+RedBlackNode pNode = node.right;
+node.right = pNode.left;
+pNode.left.parent = node;
+pNode.parent = node.parent;
+if(node.parent == RedBlackNode.NILL){
+root = pNode;
+}else if(node == node.parent.left){
+node.parent.left = pNode;
+}else {
+node.parent.right = pNode;
+}
+pNode.left = node;
+node.parent = pNode;
+
+}</pre>
+
+<p>红黑树的插入实现，文章的BR_INSERT（T ，z）：</p>
+<pre code_snippet_id="410451" snippet_file_name="blog_20140629_3_39269" name="code" class="java"> private void insert(RedBlackNode node){
+RedBlackNode preNode = RedBlackNode.NILL;
+RedBlackNode curNode = root;
+while (curNode != RedBlackNode.NILL){
+preNode = curNode;
+if(node.element.compareTo(curNode.element) &lt; 0){
+curNode = curNode.left;
+}else if(node.element.compareTo(curNode.element) &gt;0){
+curNode = curNode.right;
+}else{
+return;
+}
+}
+
+node.parent = preNode;
+if(preNode == RedBlackNode.NILL){
+root = node;
+}else if(node.element.compareTo(preNode.element) &lt; 0){
+preNode.left = node;
+}else{
+preNode.right = node;
+}
+node.left = node.right = RedBlackNode.NILL;
+node.color = RedBlackNode.RED;
+BrInsertFixup(node);
+
+}</pre>
+
+<p>插入修复算法RB-INSERT-FIXUP现实：</p>
+<pre code_snippet_id="410451" snippet_file_name="blog_20140629_4_8229124" name="code" class="java"> private void BrInsertFixup(RedBlackNode node){
+RedBlackNode pNode;
+while (node.parent.color == RedBlackNode.RED){
+if(node.parent == node.parent.parent.left){
+pNode = node.parent.parent.right;
+if(pNode.color == RedBlackNode.RED){
+node.parent.color = RedBlackNode.BLACK;
+pNode.color = RedBlackNode.BLACK;
+node.parent.parent.color = RedBlackNode.RED;
+node = node.parent.parent;
+}else {
+if (node == node.parent.right){
+node = node.parent;
+leftRotate(node);
+}
+node.parent.color = RedBlackNode.BLACK;
+node.parent.parent.color = RedBlackNode.RED;
+rightRotate(node.parent.parent);
+// node = node.parent;
+}
+}else{
+//镜像情况处理
+pNode = node.parent.parent.left;
+if(pNode.color == RedBlackNode.RED){
+node.parent.color = RedBlackNode.BLACK;
+pNode.color = RedBlackNode.BLACK;
+node.parent.parent.color = RedBlackNode.RED;
+node = node.parent.parent;
+}else {
+if(node == node.parent.left){
+node = node.parent;
+rightRotate(node);
+}
+node.parent.color = RedBlackNode.BLACK;
+node.parent.parent.color = RedBlackNode.RED;
+leftRotate(node.parent.parent);
+// node = node.parent;
+}
+}
+}
+root.color = RedBlackNode.BLACK;
+
+}</pre>
+
+<p>红黑树的删除实现RB-DELETE(T, z)</p>
+<pre code_snippet_id="410451" snippet_file_name="blog_20140629_5_3354319" name="code" class="java"> private RedBlackNode delete(RedBlackNode node){
+if(node == null || node == RedBlackNode.NILL){
+return RedBlackNode.NILL;
+}
+
+RedBlackNode pNode;
+
+if (node.left == RedBlackNode.NILL || node.right == RedBlackNode.NILL){
+pNode = node;
+}else {
+pNode = findSuccessor(node);
+}
+
+RedBlackNode nNode;
+if(pNode.left != RedBlackNode.NILL){
+nNode = pNode.left;
+}else {
+nNode = pNode.right;
+}
+
+nNode.parent = pNode.parent;
+if(pNode.parent == RedBlackNode.NILL){
+root = nNode;
+}else{
+if(pNode == pNode.parent.left){
+pNode.parent.left = nNode;
+}else{
+pNode.parent.right = nNode;
+}
+}
+
+if(pNode != node){
+node.element = pNode.element;
+}
+
+if(pNode.color == RedBlackNode.BLACK ){
+BrDeleteFixup(nNode);
+}
+
+return pNode;
+}</pre>
+
+<p>删除后的修复和保持操作RB-DELETE-FIXUP(T, x)&nbsp;</p>
+<pre code_snippet_id="410451" snippet_file_name="blog_20140629_6_1751919" name="code" class="java"> private void BrDeleteFixup(RedBlackNode node){
+if(node == null ){
+return;
+}
+while (node != root &amp;&amp; node.color == RedBlackNode.BLACK){
+if(node == node.parent.left){
+RedBlackNode bNode = node.parent.right;
+if(bNode.color == RedBlackNode.RED){
+bNode.color = RedBlackNode.BLACK;
+node.parent.color = RedBlackNode.RED;
+leftRotate(node.parent);
+bNode = node.parent.right;
+}
+if(bNode.left.color == RedBlackNode.BLACK &amp;&amp; bNode.right.color == RedBlackNode.BLACK){
+bNode.color = RedBlackNode.RED;
+node = node.parent;
+continue;
+}else if(bNode.right.color == RedBlackNode.BLACK){
+bNode.left.color = RedBlackNode.BLACK;
+bNode.color = RedBlackNode.RED;
+rightRotate(bNode);
+bNode = node.parent.left;
+}
+bNode.color = node.parent.color;
+node.parent.color = RedBlackNode.BLACK;
+bNode.right.color = RedBlackNode.BLACK;
+leftRotate(node.parent);
+node = root;
+
+}else{
+RedBlackNode bNode = node.parent.left;
+if(bNode.color == RedBlackNode.RED){
+bNode.color = RedBlackNode.BLACK;
+node.parent.color = RedBlackNode.RED;
+rightRotate(node.parent);
+bNode = node.parent.left;
+}
+if(bNode.left.color == RedBlackNode.BLACK &amp;&amp; bNode.right.color == RedBlackNode.BLACK){
+bNode.color = RedBlackNode.RED;
+node = node.parent;
+continue;
+}else if(bNode.left.color == RedBlackNode.BLACK){
+bNode.right.color = RedBlackNode.BLACK;
+bNode.color = RedBlackNode.RED;
+leftRotate(bNode);
+bNode = node.parent.right;
+}
+bNode.color = node.parent.color;
+node.parent.color = RedBlackNode.BLACK;
+bNode.left.color = RedBlackNode.BLACK;
+rightRotate(node.parent);
+node = root;
+}
+}
+node.color = RedBlackNode.BLACK;
+
+}</pre>
+
+<p>文中代码排版貌&#20284;不太好看，附上github的完整代码</p>
+<p><a href="https://gist.github.com/qarkly/4db9abf5c231f12e45d7" target="_blank" rel="external">https://gist.github.com/qarkly/4db9abf5c231f12e45d7</a></p>
+<pre><code><span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+<span class="code">    作者：qarkly112649 发表于2014/6/29 15:28:37 [原文链接](http://blog.csdn.net/qarkly112649/article/details/35787283)</span>
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+<span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+阅读：986 评论：0 [<span class="link_label">查看评论</span>](<span class="link_url">http://blog.csdn.net/qarkly112649/article/details/35787283#comments</span>)
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+</code></pre>]]></content>
+    <summary type="html">
+    <![CDATA[<p>红黑树的原理以及算法见文章：<a href="http://blog.csdn.net/v_JULY_v/article/details/6105630" target="_blank" rel="external">http://blog.csdn.net/v_JULY_]]>
+    </summary>
+    
+      <category term="java" scheme="http://qarkly@github.com/tags/java/"/>
+    
+      <category term="算法" scheme="http://qarkly@github.com/tags/%E7%AE%97%E6%B3%95/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[[原]责任链模式]]></title>
+    <link href="http://qarkly@github.com/2014/06/19/%E5%8E%9F-%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F/"/>
+    <id>http://qarkly@github.com/2014/06/19/原-责任链模式/</id>
+    <published>2014-06-19T01:38:58.000Z</published>
+    <updated>2015-08-15T09:36:39.308Z</updated>
+    <content type="html"><![CDATA[<div><span style="">注：第一节 部分引自：<a href="http://www.cnblogs.com/kym/archive/2009/04/06/1430078.html" target="_blank" rel="external">http://www.cnblogs.com/kym/archive/2009/04/06/1430078.html</a><br><br>一、责任链模式（Chain of Responsiblity）</span><br><div style="">&nbsp; &nbsp; 定义：　<span style="font-family:微软雅黑">使多个对象都有机会处理请求，从而避免请求的发送者和接受者之间的耦合关系。将这个对象连成一条链，并沿着这条链传递该请求，直到有一个对象处理他为止。</span></div><br><div style=""><span style="font-family:微软雅黑">&nbsp; &nbsp; &nbsp; &nbsp;结构实图：</span></div><br>&gt; &gt; &gt; &gt; <div><img src="http://img.blog.csdn.net/20140619093638765?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcWFya2x5MTEyNjQ5/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt=""></div><br>&gt;<br>&gt; 责任链模式涉及角色如下：<br>&gt; <em>   待处理（Client）角色：一个需要处理的请求，可以是消息或者其他<br>&gt; </em>   抽象处理者（Handler）角色：定义一个对外处理请求的接口。由它将请求分发到具体处理者（ ConcreteHandler）角色进行逐次请求处理。抽象处理者（Handler）角色和具体处理者（ConcreteHandler）角色是聚合关系<br>&gt; <em>   具体处理者（ConcreteHandler）角色：具体处理者接受到请求时，对其感兴趣的消息处理，或者传递给下个具体处理者处理<br><span style="">二、简单责任链模式的实现</span><br><div style=""><br>&gt; <div>接口定义：<br>&gt;<br>&gt; <pre name="code" class="java">public interface Filter {<br>&gt;<br>&gt;      public void messageReceived(String msgType,List&lt;String&gt; contents,NextFliter nextFliter);<br>&gt;<br>&gt;      public static interface NextFliter{<br>&gt;<br>&gt;             void doFilter(String msgType,List&lt;String&gt; contents);<br>&gt;<br>&gt;      }<br>&gt;<br>&gt;      public static interface FilterChain{<br>&gt;             public void addFirst(Filter filter);<br>&gt;             public void addLast(Filter filter);<br>&gt;             public void messageReceived(String msgType, List&lt;String&gt; contents);<br>&gt;      }<br>&gt;<br>&gt; }</pre><br>&gt;<br>&gt; </div><br>&gt;<br>&gt; <div>接口详细说明：</div><br>&gt;<br>&gt; <div><br>&gt;<br>&gt;<br>&gt; </div></div></em>   Filter接口：对应责任链模式中的就是具体处理者（ConcreteHandler）角色，只有一个方法<span style="">messageReceived</span><span style="">(String msgType,List&lt;String&gt; contents,NextFliter nextFliter)。其中msgType和contents就是需要处理的请求消息，对应责任链中的待处理（Client）角色。nextFliter是调用下一个具体处理（ConcreteHandler）角色，这样做的好处就是Filter不必只有下一个Filter的引用。具体如何实现见下面的FilterChain的实现</span><br>&gt; <em>   FilterChain接口：对应责任链模式中的抽象处理（Handler）者角色。该接口持有所有的Filter，addFirst(Filter filter)和addLast(Filter filter)方法就是向FilterChain中加入具体处理者（ConcreteHandler）角色。当请求消息到来时，FilterChain调用自身的messageReceived方法，将请求传给第一个Filter，Filter再通过自己的messageReceived方法对请求处理或者传递给下一个Filter<br>&gt; </em>   NextFliter接口：从字面意思即下一个Filter，但这个接口同样由FilterChain实现，此接口主要是通知FilterChain获取下一个Filter处理请求消息<br>&gt;<br>&gt; FilterChain具体实现：</div><br>&gt;<br>&gt; <div><pre name="code" class="java">public class DefaultFilterChain implements Filter.NextFliter,Filter.FilterChain {<br>&gt;      private LinkedList&lt;Filter&gt; fliters = new LinkedList&lt;Filter&gt;();<br>&gt;      private int index = 0;<br>&gt;<br>&gt;      public DefaultFilterChain(){}<br>&gt;      public void addLast(Filter fliter) {<br>&gt;             if (fliter == null)<br>&gt;                  return;<br>&gt;             fliters.addLast(fliter);<br>&gt;      }<br>&gt;      public void addFirst(Filter fliter) {<br>&gt;             if (fliter == null)<br>&gt;                  return;<br>&gt;             fliters.addFirst(fliter);<br>&gt;      }<br>&gt;<br>&gt;      public  void messageReceived(String msgType, List&lt;String&gt; contents) {<br>&gt;             index = -1;<br>&gt;            doFilter(msgType, contents);<br>&gt;      }<br>&gt;<br>&gt;      public void doFilter(String msgType, List&lt;String&gt; contents) {<br>&gt;             index++;<br>&gt;             if( index &lt; fliters.size()){<br>&gt;                  fliters.get( index).messageReceived(msgType, contents, this);<br>&gt;            }<br>&gt;      }<br>&gt; }</pre><br>&gt;<br>&gt; </div><br>&gt;<br>&gt; <div>FilterChain实现总结：</div><br>&gt;<br>&gt; <div>&nbsp; &nbsp; &nbsp; 优点</div><br><br>&gt; &gt; 1.  Filters使用链表存储，实现简单。每个Filter不必引用下一个Filter，由FilterChain实现，这样Filter实现比较简单方便<br>&gt; &gt; 2.  FilterChain同时实现NextFliter，每个Filter在调用下一个Filter时只需要调用nextFilter.doFilter(…)方法，这样做实现了接口隔离的效果<br>&gt; &gt; 不足<br>&gt;<br>&gt; &gt; 1.  内部使用index，造成线程不安全，如果对messageReceived方法同步代价太高，不合适<br>&gt; &gt; 2.  虽然FilterChain和NextFilter起到接口隔离效果，但两个接口同时由<span style="">DefaultFilterChain实现，代码耦合度太高，不利于拓展</span><br>&gt; &gt; 3.  <span style="">对请求消息不够抽象，造成功能单一</span><br>&gt; &gt; 4.  <span style="">只能单向过滤处理消息，不能反向</span><br>&gt; &gt;<br>&gt; &gt; 优化空间<br>&gt; &gt; 1.  不使用LinkedList，自己实现单向链表或者双向链表<br>&gt; &gt; 2.  使用双向链表实现双向过滤处理，既可以处理messageReceived消息，又可以处理messageSent消息<br>&gt; &gt; 3.  FilterChain和NextFilter分开实现，降低耦合度<br>&gt; &gt; 有机会介绍下在Mina中责任链是如何实现的…<br>
+
+<pre><code><span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+<span class="code">    作者：qarkly112649 发表于2014/6/19 9:38:58 [原文链接](http://blog.csdn.net/qarkly112649/article/details/32312037)</span>
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+<span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+阅读：208 评论：0 [<span class="link_label">查看评论</span>](<span class="link_url">http://blog.csdn.net/qarkly112649/article/details/32312037#comments</span>)
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+</code></pre>]]></content>
+    <summary type="html">
+    <![CDATA[<div><span style="">注：第一节 部分引自：<a href="http://www.cnblogs.com/kym/archive/2009/04/06/1430078.html" target="_blank" rel="external">http://ww]]>
+    </summary>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[责任链模式的使用]]></title>
+    <link href="http://qarkly@github.com/2014/06/05/%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F%E7%9A%84%E4%BD%BF%E7%94%A8/"/>
+    <id>http://qarkly@github.com/2014/06/05/责任链模式的使用/</id>
+    <published>2014-06-05T06:56:30.000Z</published>
+    <updated>2015-08-15T09:11:46.764Z</updated>
+    <content type="html"><![CDATA[<h2 id="责任链模式（Chain_of_Responsiblity）">责任链模式（Chain of Responsiblity）</h2><p>  定义：　使多个对象都有机会处理请求，从而避免请求的发送者和接受者之间的耦合关系。将这个对象连成一条链，并沿着这条链传递该请求，直到有一个对象处理他为止。<br>       结构实图：<br> <img src="/img/programming/Image.png" alt=""><br> 责任链模式涉及角色如下：</p>
+<pre><code><span class="bullet">* </span>待处理（Client）角色：一个需要处理的请求，可以是消息或者其他
+<span class="bullet">* </span>抽象处理者（Handler）角色：定义一个对外处理请求的接口。由它将请求分发到具体处理者（ ConcreteHandler）角色进行逐次请求处理。抽象处理者（Handler）角色和具体处理者（ConcreteHandler）角色是聚合关系
+<span class="bullet">* </span>具体处理者（ConcreteHandler）角色：具体处理者接受到请求时，对其感兴趣的消息处理，或者传递给下个具体处理者处理
+</code></pre><h2 id="SMP中责任链模式的运用">SMP中责任链模式的运用</h2><p>接口定义：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Filter</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">     <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">messageReceived</span><span class="params">(String msgType,List&lt;String&gt; contents,NextFliter nextFliter)</span></span>;</span><br><span class="line"></span><br><span class="line">     <span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">interface</span> <span class="title">NextFliter</span></span>&#123;</span><br><span class="line"></span><br><span class="line">            <span class="function"><span class="keyword">void</span> <span class="title">doFilter</span><span class="params">(String msgType,List&lt;String&gt; contents)</span></span>;</span><br><span class="line"></span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line">     <span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">interface</span> <span class="title">FilterChain</span></span>&#123;</span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addFirst</span><span class="params">(Filter filter)</span></span>;</span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addLast</span><span class="params">(Filter filter)</span></span>;</span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">messageReceived</span><span class="params">(String msgType, List&lt;String&gt; contents)</span></span>;</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>接口详细说明：  </p>
+<ul>
+<li><p>Filter接口:  </p>
+<p>  对应责任链模式中的就是具体处理者（ConcreteHandler）角色，只有一个方法messageReceived(String msgType,List<string> contents,NextFliter nextFliter). 其中msgType和contents就是需要处理的请求消息，对应责任链中的待处理（Client）角色。nextFliter是调用下一个具体处理（ConcreteHandler）角色，这样做的好处就是Filter不必只有下一个Filter的引用。具体如何实现见下面的FilterChain的实现  </string></p>
+</li>
+<li><p>FilterChain接口：</p>
+<p>  对应责任链模式中的抽象处理（Handler）者角色。该接口持有所有的Filter，addFirst(Filter filter)和addLast(Filter filter)方法就是向FilterChain中加入具体处理者（ConcreteHandler）角色。当请求消息到来时，FilterChain调用自身的messageReceived方法，将请求传给第一个Filter，Filter再通过自己的messageReceived方法对请求处理或者传递给下一个Filter  </p>
+</li>
+<li><p>NextFliter接口：</p>
+<p>  从字面意思即下一个Filter，但这个接口同样由FilterChain实现，此接口主要是通知FilterChain获取下一个Filter处理请求消息</p>
+</li>
+</ul>
+<p>FilterChain具体实现：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DefaultFilterChain</span> <span class="keyword">implements</span> <span class="title">Filter</span>.<span class="title">NextFliter</span>,<span class="title">Filter</span>.<span class="title">FilterChain</span> </span>&#123;</span><br><span class="line">     <span class="keyword">private</span> LinkedList&lt;Filter&gt; fliters = <span class="keyword">new</span> LinkedList&lt;Filter&gt;();</span><br><span class="line">     <span class="keyword">private</span> <span class="keyword">int</span> index = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">     <span class="function"><span class="keyword">public</span> <span class="title">DefaultFilterChain</span><span class="params">()</span></span>&#123;&#125;</span><br><span class="line"></span><br><span class="line">     <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addLast</span><span class="params">(Filter fliter)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">if</span> (fliter == <span class="keyword">null</span>)</span><br><span class="line">                 <span class="keyword">return</span>;</span><br><span class="line">            fliters.addLast(fliter);</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line">     <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addFirst</span><span class="params">(Filter fliter)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">if</span> (fliter == <span class="keyword">null</span>)</span><br><span class="line">                 <span class="keyword">return</span>;</span><br><span class="line">            fliters.addFirst(fliter);</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">     <span class="function"><span class="keyword">public</span>  <span class="keyword">void</span> <span class="title">messageReceived</span><span class="params">(String msgType, List&lt;String&gt; contents)</span> </span>&#123;</span><br><span class="line">            index = -<span class="number">1</span>;</span><br><span class="line">           doFilter(msgType, contents);</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">     <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doFilter</span><span class="params">(String msgType, List&lt;String&gt; contents)</span> </span>&#123;</span><br><span class="line">            index++;</span><br><span class="line">            <span class="keyword">if</span>( index &lt; fliters.size())&#123;</span><br><span class="line">                 fliters.get( index).messageReceived(msgType, contents, <span class="keyword">this</span>);</span><br><span class="line">           &#125;</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>FilterChain实现总结：<br>  优点</p>
+<pre><code><span class="number">1</span>. Filters使用链表存储，实现简单。每个<span class="keyword">Filter</span>不必引用下一个<span class="keyword">Filter</span>，由FilterChain实现，这样<span class="keyword">Filter</span>实现比较简单方便
+<span class="number">2</span>. FilterChain同时实现NextFliter，每个<span class="keyword">Filter</span>在调用下一个<span class="keyword">Filter</span>时只需要调用nextFilter.doFilter(...)方法，这样做实现了接口隔离的效果
+</code></pre><p>不足</p>
+<pre><code><span class="number">1.</span> 内部使用index，造成线程不安全，如果对messageReceived方法同步代价太高，不合适
+<span class="number">2.</span> 虽然FilterChain和NextFilter起到接口隔离效果，但两个接口同时由DefaultFilterChain实现，代码耦合度太高，不利于拓展
+<span class="number">3.</span> 对请求消息不够抽象，造成功能单一
+<span class="number">4.</span> 只能单向过滤处理消息，不能反向
+</code></pre><p>优化空间</p>
+<pre><code><span class="number">1.</span> 不使用LinkedList，自己实现单向链表或者双向链表，避免使用index实现线程安全
+<span class="number">2.</span> 使用双向链表实现双向过滤处理，既可以处理messageReceived消息，又可以处理messageSent消息
+<span class="number">3.</span> FilterChain和NextFilter分开实现，降低耦合度
+</code></pre><p>有机会介绍下在Mina中责任链是如何实现的…</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<h2 id="责任链模式（Chain_of_Responsiblity）">责任链模式（Chain of Responsiblity）</h2><p>  定义：　使多个对象都有机会处理请求，从而避免请求的发送者和接受者之间的耦合关系。将这个对象连成一条链，并沿着这条链传递该请求]]>
+    </summary>
+    
+      <category term="java" scheme="http://qarkly@github.com/tags/java/"/>
+    
+      <category term="设计模式" scheme="http://qarkly@github.com/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/"/>
+    
+      <category term="责任链模式" scheme="http://qarkly@github.com/tags/%E8%B4%A3%E4%BB%BB%E9%93%BE%E6%A8%A1%E5%BC%8F/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[[译]JavaSE 8 :Lambda 快速学习（四）  完结]]></title>
+    <link href="http://qarkly@github.com/2014/03/06/%E8%AF%91-JavaSE-8-Lambda-%E5%BF%AB%E9%80%9F%E5%AD%A6%E4%B9%A0%EF%BC%88%E5%9B%9B%EF%BC%89-%E5%AE%8C%E7%BB%93/"/>
+    <id>http://qarkly@github.com/2014/03/06/译-JavaSE-8-Lambda-快速学习（四）-完结/</id>
+    <published>2014-03-06T13:39:48.000Z</published>
+    <updated>2015-08-15T10:03:13.768Z</updated>
+    <content type="html"><![CDATA[<p><span style="font-weight:bold">Lambda Expressions and Collections</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">前面的章节已经介绍过</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Function</span><span lang="zh-CN" style="font-family:宋体">接口</span><span lang="en-US" style="font-family:Consolas">,</span><span lang="zh-CN" style="font-family:宋体">也已经实现基本的</span><span lang="en-US" style="font-family:Consolas">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式语法示例</span><span lang="en-US" style="font-family:Consolas">.</span><span lang="zh-CN" style="font-family:宋体">这一章节我们重新回顾</span><span lang="en-US" style="font-family:Consolas">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式如何通过</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Collection</span><span lang="zh-CN" style="font-family:宋体">类来提升</span><span lang="en-US" style="font-family:Consolas">.</span></p>
+<p><span style="font-weight:bold">Lambda Expressions and Collections</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">到目前所创建的示例中</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">集合只用到一点</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">但是一些</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式新特征改变了集合以往的使用方式</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">这一章节将介绍这些新特征</span><span lang="en-US" style="font-family:Calibri">.</span></p>
+<p><span style="font-weight:bold">新增类</span></p>
+<p><span lang="en-US" style="font-family:Calibri">Drivers,pilots</span><span lang="zh-CN" style="font-family:宋体">和</span><span lang="en-US" style="font-family:Calibri">draftees</span><span lang="zh-CN" style="font-family:宋体">查询条件都已经被封装到</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">SearchCriteria</span><span lang="zh-CN" style="font-family:宋体"><br> 类中</span><span lang="en-US" style="font-family:Consolas">.</span></p>
+<p>SearchCriteria.java</p>
+<pre code_snippet_id="221818" snippet_file_name="blog_20140306_1_6644823" name="code" class="java">package com.example.lambda;  
+ import java.util.HashMap;
+ import java.util.Map;
+ import java.util.function.Predicate;
+
+ /**
+  *
+  * @author MikeW
+  */
+ public class SearchCriteria {
+
+   private final Map&lt;String, Predicate&lt;Person&gt;&gt; searchMap = new HashMap&lt;&gt;();
+
+   private SearchCriteria() {
+     super();
+     initSearchMap();
+   }
+
+   private void initSearchMap() {
+     Predicate&lt;Person&gt; allDrivers = p -&gt; p.getAge() &gt;= 16;
+     Predicate&lt;Person&gt; allDraftees = p -&gt; p.getAge() &gt;= 18 &amp;&amp; p.getAge() &lt;= 25 &amp;&amp; p.getGender() == Gender.MALE;
+     Predicate&lt;Person&gt; allPilots = p -&gt; p.getAge() &gt;= 23 &amp;&amp; p.getAge() &lt;= 65;
+
+     searchMap.put(&quot;allDrivers&quot;, allDrivers);
+     searchMap.put(&quot;allDraftees&quot;, allDraftees);
+     searchMap.put(&quot;allPilots&quot;, allPilots);
+
+   }
+
+   public Predicate&lt;Person&gt; getCriteria(String PredicateName) {
+     Predicate&lt;Person&gt; target;
+
+     target = searchMap.get(PredicateName);
+
+     if (target == null) {
+
+       System.out.println(&quot;Search Criteria not found... &quot;);
+       System.exit(1);
+
+     }
+
+     return target;
+
+   }
+
+   public static SearchCriteria getInstance() {
+     return new SearchCriteria();
+   }
+ }</pre>
+
+<p><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Predicate</span><span lang="zh-CN" style="font-family:Calibri"></span><span lang="zh-CN" style="font-family:宋体">依赖的查询条件存储在这个类中</span><span lang="en-US" style="font-family:Consolas">,</span><span lang="zh-CN" style="font-family:宋体">对于我们的测试方法也是可以获取到的</span><span lang="en-US" style="font-family:Consolas">.</span></p>
+<p><span style="font-weight:bold">循环</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">第一个新特性就是对于每个集合类都有一个</span><span lang="en-US" style="font-family:Calibri; color:#00B0F0">f</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">orEach</span><span lang="zh-CN" style="font-family:宋体">新方法</span><span lang="en-US" style="font-family:Consolas">.</span><span lang="zh-CN" style="font-family:宋体">下面是打印</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Person</span><span lang="zh-CN" style="font-family:宋体">列表的一些示例</span><span lang="en-US" style="font-family:Consolas">.</span></p>
+<p>Test01ForEach.java</p>
+<pre code_snippet_id="221818" snippet_file_name="blog_20140306_2_2075255" name="code" class="java">public class Test01ForEach {
+
+   public static void main(String[] args) {
+
+     List&lt;Person&gt; pl = Person.createShortList();
+
+     System.out.println(&quot;\n=== Western Phone List ===&quot;);
+     pl.forEach( p -&gt; p.printWesternName() );
+
+     System.out.println(&quot;\n=== Eastern Phone List ===&quot;);
+     pl.forEach(Person::printEasternName);
+
+     System.out.println(&quot;\n=== Custom Phone List ===&quot;);
+     pl.forEach(p -&gt; { System.out.println(p.printCustom(r -&gt; &quot;Name: &quot; + r.getGivenName() + &quot; EMail: &quot; + r.getEmail())); });
+
+   }
+
+ }</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">第一个例子展示了一个标准的</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式调用</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">printWesternName</span><span lang="zh-CN" style="font-family:宋体">方法打印出在列表中的每个人。第二个例子演示的是方法引用，在方法已经存在且表示类执行的操作的情况下使用，这种语法可以代替正常的</span><span lang="en-US" style="font-family:Consolas">Lambda</span><span lang="zh-CN" style="font-family:宋体">语法。最后的一个示例展示了</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">printCustom</span><span lang="zh-CN" style="font-family:宋体">方法在这种情况下也可以使用。请注意当</span><span lang="en-US" style="font-family:Consolas">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式中包含另一个表达式时的变量名轻微变化。</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">你可以用这种方式对任何集合进行迭代。基本的结构与增强的</span><span lang="en-US" style="font-family:Calibri">for</span><span lang="zh-CN" style="font-family:宋体">循环相&#20284;，但是在类内包含迭代机制带来了许多好处。</span></p>
+<p><span style="font-weight:bold">链和过滤器</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">除了循环遍历一个集合的内容</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">你还可以将这些方法链在一起</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">第一个方法可以看做是一个过滤器把</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Predicate</span><span lang="zh-CN" style="font-family:宋体">接口作为参数</span><span lang="en-US" style="font-family:Consolas">.</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">下面的示例是遍历一个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">List</span><span lang="zh-CN" style="font-family:宋体">经过过滤之后的结果集</span><span lang="en-US" style="font-family:Consolas">.</span></p>
+<p>Test02Filter.java</p>
+<pre code_snippet_id="221818" snippet_file_name="blog_20140306_3_4267082" name="code" class="java">public class Test02Filter {
+   public static void main(String[] args) {
+
+     List&lt;Person&gt; pl = Person.createShortList();
+
+     SearchCriteria search = SearchCriteria.getInstance();
+
+     System.out.println(&quot;\n=== Western Pilot Phone List ===&quot;);
+
+     pl.stream().filter(search.getCriteria(&quot;allPilots&quot;))
+       .forEach(Person::printWesternName);
+
+     System.out.println(&quot;\n=== Eastern Draftee Phone List ===&quot;);
+
+     pl.stream().filter(search.getCriteria(&quot;allDraftees&quot;))
+       .forEach(Person::printEasternName);
+
+   }
+ }
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">第一个和最后一个循环演示了</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">List</span><span lang="zh-CN" style="font-family:宋体">是如何通过查询条件来过滤的</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">下面是最后一个循环的输出</span><span lang="en-US" style="font-family:Calibri">:</span><pre code_snippet_id="221818" snippet_file_name="blog_20140306_4_3950655" name="code" class="java">=== Eastern Draftee Phone List ===</pre></p>
+<p>Name: Baker Bob<br>Age: 21  Gender: MALE<br>EMail: bob.baker@example.com<br>Phone: 201-121-4678<br>Address: 44 4th St, Smallville, KS 12333</p>
+<p>Name: Doe John<br>Age: 25  Gender: MALE<br>EMail: john.doe@example.com<br>Phone: 202-123-4678<br>Address: 33 3rd St, Smallville, KS 12333<br></p>
+<p><span style="font-weight:bold">越来越懒</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">这些特征都很有用</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">但为何在已经有了</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">for</span><span lang="zh-CN" style="font-family:宋体">循环的前提下还要把这些特性加入到集合类呢</span><span lang="en-US" style="font-family:Calibri">?</span><span lang="zh-CN" style="font-family:宋体">通过把迭代功能集合到一个库中</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">它可以让</span><span lang="en-US" style="font-family:Calibri">java</span><span lang="zh-CN" style="font-family:宋体">开发者能做到更好的代码优化</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">为了更好解释</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">我们需要了解下面的术语定义</span><span lang="en-US" style="font-family:Calibri">:</span></p>
+<ul>
+<li><p><span lang="en-US" style="font-family:Calibri; font-size:10.5pt">Laziness(</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">惰性</span><span lang="en-US" style="font-family:Calibri; font-size:10.5pt">):</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">在编程中</span><span lang="en-US" style="font-family:Calibri; font-size:10.5pt">,</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">惰性是指只处理那些你想要处理的并且你需要处理的对象</span><span lang="en-US" style="font-family:Calibri; font-size:10.5pt">.</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">在前面的例子中</span><span lang="en-US" style="font-family:Calibri; font-size:10.5pt">,</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">最后的循环遍历是惰性的因为它只遍历了</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0; font-size:10.5pt">List</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">过滤后剩余的两个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0; font-size:10.5pt">Person</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">对象</span><span lang="en-US" style="font-family:Consolas; font-size:10.5pt">.</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">这样代码更高效因为最终的处理步骤只发生在被选择的对象上</span><span lang="en-US" style="font-family:Consolas; font-size:10.5pt">.</span></p>
+</li>
+<li><p><span lang="en-US" style="font-family:Consolas; font-size:10.5pt">Eagerness(</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">急切化</span><span lang="en-US" style="font-family:Consolas; font-size:10.5pt">):</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">在</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0; font-size:10.5pt">List</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">的每个对象上都执行操作的代码被认为是</span><span lang="en-US" style="font-family:Consolas; font-size:10.5pt">&quot;</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">急切的</span><span lang="en-US" style="font-family:Consolas; font-size:10.5pt">&quot;.</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">例如</span><span lang="en-US" style="font-family:Consolas; font-size:10.5pt">,</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">一个增强的</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0; font-size:10.5pt">for</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">循环遍历整个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0; font-size:10.5pt">List</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">只为处理两个对象</span><span lang="en-US" style="font-family:Consolas; font-size:10.5pt">,</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">这样可以认为是更</span><span lang="en-US" style="font-family:Consolas; font-size:10.5pt">&quot;</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">急切的</span><span lang="en-US" style="font-family:Consolas; font-size:10.5pt">&quot;</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">途径</span><span lang="en-US" style="font-family:Consolas; font-size:10.5pt">.</span></p>
+</li>
+</ul>
+<p><span lang="zh-CN" style="font-family:宋体">通过把循环集成到</span><span lang="en-US" style="font-family:Calibri">Collections</span><span lang="zh-CN" style="font-family:宋体">库中</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">当有机会的时候代码可以更好的优化成</span><span lang="en-US" style="font-family:Calibri">&quot;</span><span lang="zh-CN" style="font-family:宋体">惰性</span><span lang="en-US" style="font-family:Calibri">&quot;</span><span lang="zh-CN" style="font-family:宋体">操作</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">当</span><span lang="en-US" style="font-family:Calibri">&quot;</span><span lang="zh-CN" style="font-family:宋体">急切的</span><span lang="en-US" style="font-family:Calibri">&quot;</span><span lang="zh-CN" style="font-family:宋体">做法更具有意义的时候</span><span lang="en-US" style="font-family:Calibri">(</span><span lang="zh-CN" style="font-family:宋体">例如计算求和或者平均&#20540;</span><span lang="en-US" style="font-family:Calibri">),&quot;</span><span lang="zh-CN" style="font-family:宋体">急切的</span><span lang="en-US" style="font-family:Calibri">&quot;</span><span lang="zh-CN" style="font-family:宋体">操作仍可以使用</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">这样更高效更灵活相对与总使用</span><span lang="en-US" style="font-family:Calibri">&quot;</span><span lang="zh-CN" style="font-family:宋体">急切</span><span lang="en-US" style="font-family:Calibri">&quot;</span><span lang="zh-CN" style="font-family:宋体">操作而言</span><span lang="en-US" style="font-family:Calibri">.</span></p>
+<p>&nbsp;</p>
+<p><span lang="en-US" style="font-family:Consolas; color:#00B0F0; font-weight:bold">stream</span><span lang="zh-CN" style="font-family:宋体; color:#366092; font-weight:bold">方法</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">在前面的代码示例中</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">我们注意到</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">stream</span><span lang="zh-CN" style="font-family:宋体">方法在过滤之前和循环开始的时候被调用</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">这个方法将一个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Collection</span><span lang="zh-CN" style="font-family:宋体">作为输入并返回一个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">java.util.stream.Stream</span><span lang="zh-CN" style="font-family:宋体">接口作为输出</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">一个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Stream</span><span lang="zh-CN" style="font-family:宋体">代表一个元素集合，任何方法都可以链上（个人注解：类&#20284;于建造者模式的一种写法，你可以连续调用</span><span lang="en-US" style="font-family:Calibri">stream</span><span lang="zh-CN" style="font-family:宋体">的各种方法）。在默认情况下，一旦元素被消耗它们将不能从</span><span lang="en-US" style="font-family:Calibri">stream</span><span lang="zh-CN" style="font-family:宋体">再次获取到（个人注解：例如调用</span><span lang="en-US" style="font-family:Calibri">forEach</span><span lang="zh-CN" style="font-family:宋体">方法）。因此，一个操作链只能在一个特定的</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Stream</span><span lang="zh-CN" style="font-family:宋体">上执行一次。此外，</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Stream</span><span lang="zh-CN" style="font-family:宋体">可以串行（默认情况下）或者并行这依赖于方法的调用。在这个章节最后有一个并行处理的</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Stream</span><span lang="zh-CN" style="font-family:宋体">示例。</span></p>
+<p><span style="font-weight:bold">变化和结果</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">前面提到，一个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Stream</span><span lang="zh-CN" style="font-family:宋体">在使用之后被丢弃。因此，在集合里的元素是不能使用</span><span lang="en-US" style="font-family:Consolas">Stream</span><span lang="zh-CN" style="font-family:宋体">来交换或者改变。但是如果你想保存这些经过链操作之后的元素该怎么办呢？你可以将它们保存到另一个新的集合中。下面的代码将展示如何做到。</span></p>
+<p>Test03toList.java</p>
+<pre code_snippet_id="221818" snippet_file_name="blog_20140306_5_2554432" name="code" class="java">public class Test03toList {
+   public static void main(String[] args) {
+
+     List&lt;Person&gt; pl = Person.createShortList();
+
+     SearchCriteria search = SearchCriteria.getInstance();
+
+     // Make a new list after filtering.
+     List&lt;Person&gt; pilotList = pl
+             .stream()
+             .filter(search.getCriteria(&quot;allPilots&quot;))
+             .collect(Collectors.toList());
+
+     System.out.println(&quot;\n=== Western Pilot Phone List ===&quot;);
+     pilotList.forEach(Person::printWesternName);
+
+   }
+
+ }
+</pre>
+
+<p><span lang="en-US" style="font-family:Consolas; color:#00B0F0">collect</span><span lang="zh-CN" style="font-family:宋体">方法调用时用到一个参数</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Collectors</span><span lang="zh-CN" style="font-family:宋体">类。这个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Collectors</span><span lang="zh-CN" style="font-family:宋体">类能够返回</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">stream</span><span lang="zh-CN" style="font-family:宋体">的结果的</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">List</span><span lang="zh-CN" style="font-family:宋体">或者</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Set</span><span lang="zh-CN" style="font-family:宋体">。这个例子展示了</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">stream</span><span lang="zh-CN" style="font-family:宋体">的结果是如何分配到新的</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">List</span><span lang="zh-CN" style="font-family:宋体">中，并遍历这个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">List</span><span lang="zh-CN" style="font-family:宋体; color:#00B0F0">。</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">使用</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">map</span><span lang="zh-CN" style="font-family:宋体">计算</span></p>
+<p><span lang="en-US" style="font-family:Calibri">map</span><span lang="zh-CN" style="font-family:宋体">方法一般和</span><span lang="en-US" style="font-family:Calibri">filter</span><span lang="zh-CN" style="font-family:宋体">使用</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">该方法从一个类中获取某一属性并使用它</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">下面的例子演示如何使用年龄来计算的</span><span lang="en-US" style="font-family:Calibri">.</span></p>
+<p>Test04Map.java</p>
+<pre code_snippet_id="221818" snippet_file_name="blog_20140306_6_8334309" name="code" class="java">public class Test04Map {
+
+   public static void main(String[] args) {
+     List&lt;Person&gt; pl = Person.createShortList();
+
+     SearchCriteria search = SearchCriteria.getInstance();
+
+     // Calc average age of pilots old style
+     System.out.println(&quot;== Calc Old Style ==&quot;);
+     int sum = 0;
+     int count = 0;
+
+     for (Person p:pl){
+       if (p.getAge() &gt;= 23 &amp;&amp; p.getAge() &lt;= 65 ){
+         sum = sum + p.getAge();
+         count++;
+       }
+     }
+
+     long average = sum / count;
+     System.out.println(&quot;Total Ages: &quot; + sum);
+     System.out.println(&quot;Average Age: &quot; + average);
+
+     // Get sum of ages
+     System.out.println(&quot;\n== Calc New Style ==&quot;);
+     long totalAge = pl
+             .stream()
+             .filter(search.getCriteria(&quot;allPilots&quot;))
+             .mapToInt(p -&gt; p.getAge())
+             .sum();
+
+     // Get average of ages
+     OptionalDouble averageAge = pl
+             .parallelStream()
+             .filter(search.getCriteria(&quot;allPilots&quot;))
+             .mapToDouble(p -&gt; p.getAge())
+             .average();
+
+     System.out.println(&quot;Total Ages: &quot; + totalAge);
+     System.out.println(&quot;Average Age: &quot; + averageAge.getAsDouble());
+
+   }
+
+ }
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">这个类的输出如下</span><span lang="en-US" style="font-family:Calibri">:</span></p>
+<pre code_snippet_id="221818" snippet_file_name="blog_20140306_7_6381679" name="code" class="java">== Calc Old Style ==
+Total Ages: 150
+Average Age: 37
+
+== Calc New Style ==
+Total Ages: 150
+Average Age: 37.5
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">这个程序计算在列表中所有飞行员的平均年龄</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">第一个循环演示了以前的方式通过</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">for</span><span lang="zh-CN" style="font-family:宋体">循环来计算</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">第二个循环使用</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">map</span><span lang="zh-CN" style="font-family:宋体">方法从串行流中获取每个人的年龄</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">注意</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">totalAge</span><span lang="zh-CN" style="font-family:宋体">是个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">long</span><span lang="zh-CN" style="font-family:宋体">型。</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">map</span><span lang="zh-CN" style="font-family:宋体">方法返回一个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">IntStream</span><span lang="zh-CN" style="font-family:宋体">对象，它包含</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">sum</span><span lang="zh-CN" style="font-family:宋体">方法返回</span><span lang="en-US" style="font-family:宋体; color:#00B0F0">long</span><span lang="zh-CN" style="font-family:宋体">型。</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">注意：为了第二次计算平均&#20540;，不需要再计算年龄的总和。这只是为了教学演示如何使用</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">sum</span><span lang="zh-CN" style="font-family:宋体">方法。</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">最后的循环从流（</span><span lang="en-US" style="font-family:Calibri">Stream</span><span lang="zh-CN" style="font-family:宋体">）中计算平均年龄。注意</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">parallelStream</span><span lang="zh-CN" style="font-family:宋体">方法是用来获取一个并行流这样就可以并行计算数&#20540;了。当然返回&#20540;跟上面的例子也有点不同。</span></p>
+<p><span style="font-weight:bold">资源</span></p>
+<p><a href="http://www.oracle.com/webfolder/technetwork/tutorials/obe/java/Lambda-QuickStart/examples/LambdaCollectionExamples.zip" target="_blank" rel="external">点击打开链接</a></p>
+<p>&nbsp;</p>
+<p><span style="font-size:24px">总结</span></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 在这个教程中，你已经学习了如何使用：</p>
+<ul>
+<li><p>Java中的匿名内部类</p>
+</li>
+<li><p>在Java SE 8中Lambda表达式代替匿名内部类</p>
+</li>
+<li>Lambda表达式的正确语法</li>
+<li>使用<span style="color:#00B0F0">Predicate</span>接口在列表中进行搜索</li>
+<li><p><span style="color:#00B0F0">Function</span>接口来处理对象和处理类型不一致的对象</p>
+</li>
+<li><p>在Java SE 8中<span style="color:#00B0F0">Collections</span>加入的新特征来支持Lambda表达式</p>
+<pre><code><span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+<span class="code">    作者：qarkly112649 发表于2014/3/6 21:39:48 [原文链接](http://blog.csdn.net/qarkly112649/article/details/20654197)</span>
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+<span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+阅读：376 评论：0 [<span class="link_label">查看评论</span>](<span class="link_url">http://blog.csdn.net/qarkly112649/article/details/20654197#comments</span>)
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+</code></pre></li>
+</ul>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p><span style="font-weight:bold">Lambda Expressions and Collections</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">前面的章节已经介绍过</spa]]>
+    </summary>
+    
+      <category term="Lambda" scheme="http://qarkly@github.com/tags/Lambda/"/>
+    
+      <category term="java8" scheme="http://qarkly@github.com/tags/java8/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[[译]JavaSE 8 :Lambda 快速学习（三）]]></title>
+    <link href="http://qarkly@github.com/2014/03/05/%E8%AF%91-JavaSE-8-Lambda-%E5%BF%AB%E9%80%9F%E5%AD%A6%E4%B9%A0%EF%BC%88%E4%B8%89%EF%BC%89/"/>
+    <id>http://qarkly@github.com/2014/03/05/译-JavaSE-8-Lambda-快速学习（三）/</id>
+    <published>2014-03-05T15:21:26.000Z</published>
+    <updated>2015-08-15T10:03:03.591Z</updated>
+    <content type="html"><![CDATA[<p>&nbsp;java.util.function 包</p>
+<p>当然<span style="color:#00B0F0">Predicate</span> 不是Java SE8提供的唯一函数式接口。此外还设计了一些标准的接口作为开发者的首要选择.</p>
+<ul>
+<li>Predicate :将Object的属性作为参数传递</li>
+<li>Consumer :将Object执行的动作作为参数传递</li>
+<li>Function :将类型T转换成类型U</li>
+<li><p>Supplier :提供泛型T的实例（好像一个工厂模式）</p>
+</li>
+<li><p>UnaryOperator :从T到T的一元操作</p>
+</li>
+<li><p>BinaryOperator :从(T,T)到T的二元操作</p>
+</li>
+</ul>
+<p>此外，这些接口许多都已经有原始版本。这些应该做为你的Lambda表达式良好的起始点。</p>
+<p><span style="font-weight:bold">东方风&#26684;的名字和方法引用</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">当正在编写前面的事例的时候，我决定它将是对</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Person</span><span lang="zh-CN" style="font-family:宋体">类来说很灵活的打印系统。一个功能需求就是它既能显示西方风&#26684;的名字又能显示东方风&#26684;的名字。在西方国家，通常是名字在前，姓氏在后。但在许多东方文化中，一般是姓氏在前，名字在后。</span></p>
+<p>一个旧式风&#26684;的例子</p>
+<p><span lang="zh-CN" style="font-family:宋体">下面示例是在没有</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">支持下如何实现</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Person</span><span lang="zh-CN" style="font-family:宋体">打印类。</span></p>
+<p>Person.java</p>
+<pre code_snippet_id="219920" snippet_file_name="blog_20140305_1_5797769" name="code" class="java">public void printWesternName(){  
+    System.out.println(&quot;\nName: &quot; + this.getGivenName() + &quot; &quot; + this.getSurName() + &quot;\n&quot; +
+              &quot;Age: &quot; + this.getAge() + &quot;  &quot; + &quot;Gender: &quot; + this.getGender() + &quot;\n&quot; +
+              &quot;EMail: &quot; + this.getEmail() + &quot;\n&quot; +
+              &quot;Phone: &quot; + this.getPhone() + &quot;\n&quot; +
+              &quot;Address: &quot; + this.getAddress());
+   }
+
+   public void printEasternName(){
+
+     System.out.println(&quot;\nName: &quot; + this.getSurName() + &quot; &quot; + this.getGivenName() + &quot;\n&quot; +
+              &quot;Age: &quot; + this.getAge() + &quot;  &quot; + &quot;Gender: &quot; + this.getGender() + &quot;\n&quot; +
+              &quot;EMail: &quot; + this.getEmail() + &quot;\n&quot; +
+              &quot;Phone: &quot; + this.getPhone() + &quot;\n&quot; +
+              &quot;Address: &quot; + this.getAddress());
+   }
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">每一种风&#26684;都对应一个方法来打印输出一个</span><span lang="en-US" style="font-family:Calibri">Person</span></p>
+<p><span style="font-weight:bold">The Function Interface</span></p>
+<p><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Function</span><span lang="zh-CN" style="font-family:宋体">接口对于这种问题很有用。它只有一个方法</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">apply</span><span lang="zh-CN" style="font-family:宋体">具备下面的特征：</span></p>
+<p>public R apply(T t){ }</p>
+<p><span lang="zh-CN" style="font-family:宋体">它传递有一个泛型</span><span lang="en-US" style="font-family:Calibri">T</span><span lang="zh-CN" style="font-family:宋体">参数，返回一个泛型</span><span lang="en-US" style="font-family:Calibri">R</span><span lang="zh-CN" style="font-family:宋体">。对于这个示例来说，传递</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Person</span><span lang="zh-CN" style="font-family:宋体">类和返回</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">String</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">。对</span><span lang="en-US" style="font-family:Calibri">Person</span><span lang="zh-CN" style="font-family:宋体">一个更灵活的打印方法应该像下面这样写：</span></p>
+<p>Person.java</p>
+<pre code_snippet_id="219920" snippet_file_name="blog_20140305_2_2656659" name="code" class="java">   public String printCustom(Function &lt;Person, String&gt; f){
+       return f.apply(this);
+   }
+
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">这个示例相对简单一些。一个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Function</span><span lang="zh-CN" style="font-family:宋体">接口被传递到方法中返回一个</span><span lang="en-US" style="font-family:Calibri">String</span><span lang="zh-CN" style="font-family:宋体">。这个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">apply</span><span lang="zh-CN" style="font-family:宋体">方法处理</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式将决定什么样的</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Person</span><span lang="zh-CN" style="font-family:宋体">信息将被返回。</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">这些</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Function</span><span lang="zh-CN" style="font-family:宋体">是如何定义的呢？下面是测试代码将调用前面的方法。</span></p>
+<p><span style="font-weight:bold">NameTestNew.java</span></p>
+<pre code_snippet_id="219920" snippet_file_name="blog_20140305_3_7880129" name="code" class="java"> public class NameTestNew {
+
+   public static void main(String[] args) {
+
+     System.out.println(&quot;\n==== NameTestNew02 ===&quot;);
+
+     List&lt;Person&gt; list1 = Person.createShortList();
+
+     // Print Custom First Name and e-mail
+     System.out.println(&quot;===Custom List===&quot;);
+     for (Person person:list1){
+         System.out.println(
+             person.printCustom(p -&gt; &quot;Name: &quot; + p.getGivenName() + &quot; EMail: &quot; + p.getEmail())
+         );
+     }
+
+     // Define Western and Eastern Lambdas
+
+     Function&lt;Person, String&gt; westernStyle = p -&gt; {
+       return &quot;\nName: &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot;\n&quot; +
+              &quot;Age: &quot; + p.getAge() + &quot;  &quot; + &quot;Gender: &quot; + p.getGender() + &quot;\n&quot; +
+              &quot;EMail: &quot; + p.getEmail() + &quot;\n&quot; +
+              &quot;Phone: &quot; + p.getPhone() + &quot;\n&quot; +
+              &quot;Address: &quot; + p.getAddress();
+     };
+
+     Function&lt;Person, String&gt; easternStyle =  p -&gt; &quot;\nName: &quot; + p.getSurName() + &quot; &quot;
+             + p.getGivenName() + &quot;\n&quot; + &quot;Age: &quot; + p.getAge() + &quot;  &quot; +
+             &quot;Gender: &quot; + p.getGender() + &quot;\n&quot; +
+             &quot;EMail: &quot; + p.getEmail() + &quot;\n&quot; +
+             &quot;Phone: &quot; + p.getPhone() + &quot;\n&quot; +
+             &quot;Address: &quot; + p.getAddress();
+
+     // Print Western List
+     System.out.println(&quot;\n===Western List===&quot;);
+     for (Person person:list1){
+         System.out.println(
+             person.printCustom(westernStyle)
+         );
+     }
+
+     // Print Eastern List
+     System.out.println(&quot;\n===Eastern List===&quot;);
+     for (Person person:list1){
+         System.out.println(
+             person.printCustom(easternStyle)
+         );
+     }
+
+   }
+ }
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">第一个循环只是打印名字和</span><span lang="en-US" style="font-family:Calibri">email</span><span lang="zh-CN" style="font-family:宋体">地址。但是任何合法的表达式都可以传递给</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">printCustom</span><span lang="zh-CN" style="font-family:宋体">方法。东方和西方的打印风&#26684;都是使用</span><span lang="en-US" style="font-family:Consolas">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式定义并存储在一个变量中。这些变量传递给后两个循环中。这些</span><span lang="en-US" style="font-family:Consolas">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式可以合并到</span><span lang="en-US" style="font-family:Consolas">Map</span><span lang="zh-CN" style="font-family:宋体">中这样能够更容易的复用它们。</span><span lang="en-US" style="font-family:Consolas">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式提供了很好的灵活性。</span></p>
+<p><span style="font-weight:bold">示例输出</span></p>
+<p>下面是程序的示例输出结果</p>
+<pre code_snippet_id="219920" snippet_file_name="blog_20140305_4_2895857" name="code" class="java">==== NameTestNew02 ===
+===Custom List===
+Name: Bob EMail: bob.baker@example.com
+Name: Jane EMail: jane.doe@example.com
+Name: John EMail: john.doe@example.com
+Name: James EMail: james.johnson@example.com
+Name: Joe EMail: joebob.bailey@example.com
+Name: Phil EMail: phil.smith@examp;e.com
+Name: Betty EMail: betty.jones@example.com
+
+===Western List===
+
+Name: Bob Baker
+Age: 21  Gender: MALE
+EMail: bob.baker@example.com
+Phone: 201-121-4678
+Address: 44 4th St, Smallville, KS 12333
+
+Name: Jane Doe
+Age: 25  Gender: FEMALE
+EMail: jane.doe@example.com
+Phone: 202-123-4678
+Address: 33 3rd St, Smallville, KS 12333
+
+Name: John Doe
+Age: 25  Gender: MALE
+EMail: john.doe@example.com
+Phone: 202-123-4678
+Address: 33 3rd St, Smallville, KS 12333
+
+Name: James Johnson
+Age: 45  Gender: MALE
+EMail: james.johnson@example.com
+Phone: 333-456-1233
+Address: 201 2nd St, New York, NY 12111
+
+Name: Joe Bailey
+Age: 67  Gender: MALE
+EMail: joebob.bailey@example.com
+Phone: 112-111-1111
+Address: 111 1st St, Town, CA 11111
+
+Name: Phil Smith
+Age: 55  Gender: MALE
+EMail: phil.smith@examp;e.com
+Phone: 222-33-1234
+Address: 22 2nd St, New Park, CO 222333
+
+Name: Betty Jones
+Age: 85  Gender: FEMALE
+EMail: betty.jones@example.com
+Phone: 211-33-1234
+Address: 22 4th St, New Park, CO 222333
+
+===Eastern List===
+
+Name: Baker Bob
+Age: 21  Gender: MALE
+EMail: bob.baker@example.com
+Phone: 201-121-4678
+Address: 44 4th St, Smallville, KS 12333
+
+Name: Doe Jane
+Age: 25  Gender: FEMALE
+EMail: jane.doe@example.com
+Phone: 202-123-4678
+Address: 33 3rd St, Smallville, KS 12333
+
+Name: Doe John
+Age: 25  Gender: MALE
+EMail: john.doe@example.com
+Phone: 202-123-4678
+Address: 33 3rd St, Smallville, KS 12333
+
+Name: Johnson James
+Age: 45  Gender: MALE
+EMail: james.johnson@example.com
+Phone: 333-456-1233
+Address: 201 2nd St, New York, NY 12111
+
+Name: Bailey Joe
+Age: 67  Gender: MALE
+EMail: joebob.bailey@example.com
+Phone: 112-111-1111
+Address: 111 1st St, Town, CA 11111
+
+Name: Smith Phil
+Age: 55  Gender: MALE
+EMail: phil.smith@examp;e.com
+Phone: 222-33-1234
+Address: 22 2nd St, New Park, CO 222333
+
+Name: Jones Betty
+Age: 85  Gender: FEMALE
+EMail: betty.jones@example.com
+Phone: 211-33-1234
+Address: 22 4th St, New Park, CO 222333
+</pre>
+
+<p>资源链接</p>
+<p><a href="http://www.oracle.com/webfolder/technetwork/tutorials/obe/java/Lambda-QuickStart/examples/LambdaFunctionExamples.zip" target="_blank" rel="external">点击打开链接</a></p>
+<pre><code><span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+<span class="code">    作者：qarkly112649 发表于2014/3/5 23:21:26 [原文链接](http://blog.csdn.net/qarkly112649/article/details/20577457)</span>
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+<span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+阅读：234 评论：0 [<span class="link_label">查看评论</span>](<span class="link_url">http://blog.csdn.net/qarkly112649/article/details/20577457#comments</span>)
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+</code></pre>]]></content>
+    <summary type="html">
+    <![CDATA[<p>&nbsp;java.util.function 包</p>
+<p>当然<span style="color:#00B0F0">Predicate</span> 不是Java SE8提供的唯一函数式接口。此外还设计了一些标准的接口作为开发者的首要选择.</p>
+<ul>
+<]]>
+    </summary>
+    
+      <category term="Lambda" scheme="http://qarkly@github.com/tags/Lambda/"/>
+    
+      <category term="java8" scheme="http://qarkly@github.com/tags/java8/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[[译]JavaSE 8 :Lambda 快速学习（二）]]></title>
+    <link href="http://qarkly@github.com/2014/02/25/%E8%AF%91-JavaSE-8-Lambda-%E5%BF%AB%E9%80%9F%E5%AD%A6%E4%B9%A0%EF%BC%88%E4%BA%8C%EF%BC%89/"/>
+    <id>http://qarkly@github.com/2014/02/25/译-JavaSE-8-Lambda-快速学习（二）/</id>
+    <published>2014-02-25T14:18:27.000Z</published>
+    <updated>2015-08-15T10:02:48.934Z</updated>
+    <content type="html"><![CDATA[<p><span lang="zh-CN" style="font-family:宋体; font-weight:bold">使用</span><span lang="en-US" style="font-family:Calibri; font-weight:bold">Lambda</span><span lang="zh-CN" style="font-family:宋体; font-weight:bold">表达式改进代码</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">本章节根据前面的例子来向你展示</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式是如何改进你的代码的</span><span lang="en-US" style="font-family:Calibri">.Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式更好地支持不要重复自己</span><span lang="en-US" style="font-family:Calibri">(Donot<br> Repeat Yourself)</span><span lang="zh-CN" style="font-family:宋体">原则，并使你的代码更简单和更具有可读性。</span></p>
+<p><span style="font-weight:bold">一个常见的查询用例</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">一个常见的编程用例就是根据特定的规则从数据集合中查找元素。在</span><span lang="en-US" style="font-family:Calibri">2012</span><span lang="zh-CN" style="font-family:宋体">年</span><span lang="en-US" style="font-family:Calibri">JavaOne</span><span lang="zh-CN" style="font-family:宋体">大会上精彩的“</span><span lang="en-US" style="font-family:Calibri">Jump-Starting<br> Lambda</span><span lang="zh-CN" style="font-family:宋体">”演说中，Stuart Marks 和 MikeDuigou就是使用这个用例做示范。给一个人名单，使用不同规则让机器人和匹配的人通话。这个教程也遵循这一基本前提但稍微有些变化。</span></p>
+<p>在这个示例中，我们的信息需要区分在美国的三个不同的群体。</p>
+<ul>
+<li><p><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">司机</span><span lang="en-US" style="font-family:Calibri; font-size:10.5pt">:</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">年龄在</span><span lang="en-US" style="font-family:Calibri; font-size:10.5pt">16</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">岁以上的</span></p>
+</li>
+<li><p><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">应征者</span><span lang="en-US" style="font-family:Calibri; font-size:10.5pt">:</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">年龄在</span><span lang="en-US" style="font-family:Calibri; font-size:10.5pt">18-25</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">岁的男性</span></p>
+</li>
+<li><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">飞行员</span><span lang="en-US" style="font-family:Calibri; font-size:10.5pt">(</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">特指商业飞行员</span><span lang="en-US" style="font-family:Calibri; font-size:10.5pt">):</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">年龄在</span><span lang="en-US" style="font-family:Calibri; font-size:10.5pt">23-65</span><span lang="zh-CN" style="font-family:宋体; font-size:10.5pt">之间</span></li>
+</ul>
+<p><span lang="zh-CN" style="font-family:宋体">能够完成这些任务的真实机器人还没有进入商用阶段</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">这里不打电话</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">邮寄或者发送电子邮件</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">取而代之是将信息在控制台打印出来</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">信息包含一个人的名字</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">年龄和一些特定的媒体信息</span><span lang="en-US" style="font-family:Calibri">(</span><span lang="zh-CN" style="font-family:宋体">例如用来发送电邮的电子邮箱地址</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">打电话所需要的电话号码</span><span lang="en-US" style="font-family:Calibri">)</span></p>
+<p><span lang="en-US" style="font-family:Calibri"></span></p>
+<p><span style="font-weight:bold">Person Class</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">在测试名单中的人都是使用</span><span lang="en-US" style="font-family:Calibri">Person</span><span lang="zh-CN" style="font-family:宋体">类来定义并具有以下的属性</span><span lang="en-US" style="font-family:Calibri">:</span></p>
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_1_9021564" name="code" class="java"> public class Person {
+   private String givenName;
+   private String surName;
+   private int age;
+   private Gender gender;
+   private String eMail;
+   private String phone;
+   private String address;
+</pre><span lang="zh-CN" style="font-family:宋体">这个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Person</span><span lang="zh-CN" style="font-family:宋体">类使用</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Builder</span><span lang="zh-CN" style="font-family:宋体">来创建新对象</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">示例的人名单列表是使用</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">createShortList</span><span lang="zh-CN" style="font-family:宋体">
+ 方法创建</span><span lang="en-US" style="font-family:Consolas">.</span><span lang="zh-CN" style="font-family:宋体">下面是该方法的阶段代码片段</span><span lang="en-US" style="font-family:Consolas">.</span><span lang="zh-CN" style="font-family:宋体">注意</span><span lang="en-US" style="font-family:Consolas">:</span><span lang="zh-CN" style="font-family:宋体">这个教程所有的源代码都包含在一个</span><span lang="en-US" style="font-family:Consolas">NetBeans</span><span lang="zh-CN" style="font-family:宋体">工程中，在这一章节的最后有链接地址。</span>
+
+<span lang="en-US" style="font-family:Calibri"></span>
+
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_2_3034727" name="code" class="java"> public static List&lt;Person&gt; createShortList(){     List&lt;Person&gt; people = new ArrayList&lt;&gt;();
+
+     people.add(
+       new Person.Builder()
+             .givenName(&quot;Bob&quot;)
+             .surName(&quot;Baker&quot;)
+             .age(21)
+             .gender(Gender.MALE)
+             .email(&quot;bob.baker@example.com&quot;)
+             .phoneNumber(&quot;201-121-4678&quot;)
+             .address(&quot;44 4th St, Smallville, KS 12333&quot;)
+             .build()
+       );
+
+     people.add(
+       new Person.Builder()
+             .givenName(&quot;Jane&quot;)
+             .surName(&quot;Doe&quot;)
+             .age(25)
+             .gender(Gender.FEMALE)
+             .email(&quot;jane.doe@example.com&quot;)
+             .phoneNumber(&quot;202-123-4678&quot;)
+             .address(&quot;33 3rd St, Smallville, KS 12333&quot;)
+             .build()
+       );
+
+     people.add(
+       new Person.Builder()
+             .givenName(&quot;John&quot;)
+             .surName(&quot;Doe&quot;)
+             .age(25)
+             .gender(Gender.MALE)
+             .email(&quot;john.doe@example.com&quot;)
+             .phoneNumber(&quot;202-123-4678&quot;)
+             .address(&quot;33 3rd St, Smallville, KS 12333&quot;)
+             .build()
+     );
+</pre>
+
+<p>第一次尝试</p>
+<p><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Pserson</span><span lang="zh-CN" style="font-family:宋体">类和查询条件都已经定义好，现在你可以写一个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">RoboContant</span><span lang="zh-CN" style="font-family:宋体">类。一个可行的解决方法是给每一个用例定义一个方法：</span></p>
+<p><span lang="en-US" style="font-family:Consolas; color:#00B0F0">RoboContactsMethods</span><span lang="zh-CN" style="font-family:宋体">.</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">java</span></p>
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_3_7811256" name="code" class="java"> package com.example.lambda;
+    import java.util.List;
+
+    /**
+     *
+     * @author MikeW
+     */
+    public class RoboContactMethods {
+
+     public void callDrivers(List&lt;Person&gt; pl){
+       for(Person p:pl){
+         if (p.getAge() &gt;= 16){
+           roboCall(p);
+        }
+       }
+     }
+
+     public void emailDraftees(List&lt;Person&gt; pl){
+       for(Person p:pl){
+         if (p.getAge() &gt;= 18 &amp;&amp; p.getAge() &lt;= 25 &amp;&amp; p.getGender() == Gender.MALE){
+           roboEmail(p);
+         }
+       }
+     }
+
+     public void mailPilots(List&lt;Person&gt; pl){
+       for(Person p:pl){
+         if (p.getAge() &gt;= 23 &amp;&amp; p.getAge() &lt;= 65){
+           roboMail(p);
+         }
+       }
+     }
+
+     public void roboCall(Person p){
+       System.out.println(&quot;Calling &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getPhone());
+     }
+
+     public void roboEmail(Person p){
+       System.out.println(&quot;EMailing &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getEmail());
+     }
+
+     public void roboMail(Person p){
+       System.out.println(&quot;Mailing &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getAddress());
+     }
+
+   }
+</pre>
+
+<p>你可以从方法名（<span style="color:#00B0F0">callDrivers</span>, <span style="color:#00B0F0"><br>emailDraftees</span>, 和 <span style="color:#00B0F0">mailPilots</span>）中明白这些方法描述的都是一种正在发生的行为。只要传达明确的查询条件，机器人根据适当的调用做出动作。可是，这样的设计也有几个不好的地方：</p>
+<ul>
+<li>没有遵循“不要重复自己”（DRY）原则</li>
+</ul>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 每个方法都重复循环机制</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 每个方法的选择条件必须重写</p>
+<ul>
+<li>&nbsp;&nbsp; 针对每个用例好多方法需要实现</li>
+<li>代码不灵活。一旦查询条件变化，许多的代码都需要为一个更新而改变。此外，这个代码也不好维护。</li>
+</ul>
+<p>重构方法</p>
+<p>怎么修改代码呢？从查询条件开始比较好。如果测试条件能够独立放在一个方法里，将会好很多。</p>
+<p><span style="color:#00B0F0">RoboContactMethods2</span>.<span style="color:#00B0F0">java</span></p>
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_4_1715734" name="code" class="java">package com.example.lambda;
+    import java.util.List;
+
+    /**
+     *
+     * @author MikeW
+     */
+    public class RoboContactMethods2 {
+
+     public void callDrivers(List&lt;Person&gt; pl){
+       for(Person p:pl){
+         if (isDriver(p)){
+           roboCall(p);
+         }
+       }
+     }
+
+     public void emailDraftees(List&lt;Person&gt; pl){
+       for(Person p:pl){
+         if (isDraftee(p)){
+           roboEmail(p);
+         }
+       }
+     }
+
+     public void mailPilots(List&lt;Person&gt; pl){
+       for(Person p:pl){
+         if (isPilot(p)){
+           roboMail(p);
+         }
+       }
+     }
+
+     public boolean isDriver(Person p){
+       return p.getAge() &gt;= 16;
+     }
+
+     public boolean isDraftee(Person p){
+       return p.getAge() &gt;= 18 &amp;&amp; p.getAge() &lt;= 25 &amp;&amp; p.getGender() == Gender.MALE;
+     }
+
+     public boolean isPilot(Person p){
+       return p.getAge() &gt;= 23 &amp;&amp; p.getAge() &lt;= 65;
+     }
+
+     public void roboCall(Person p){
+       System.out.println(&quot;Calling &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getPhone());
+     }
+
+     public void roboEmail(Person p){
+       System.out.println(&quot;EMailing &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getEmail());
+     }
+
+     public void roboMail(Person p){
+       System.out.println(&quot;Mailing &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getAddress());
+     }
+
+   }
+</pre>
+
+<p>查询条件被封装在一个方法里，改善了之前的例子。测试条件可以复用，而且发生变化也不会影响整个类。可是它还有许多代码重复的地方，每个用例还需要一个独立的方法。有没有更好的方式将查询条件传递给这些方法呢？</p>
+<p><span style="font-weight:bold">匿名类</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">在</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式之前，匿名内部类是一种选择。例如给一个接口（</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">MyTest</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">java</span><span lang="zh-CN" style="font-family:宋体">）定义一个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Test</span><span lang="zh-CN" style="font-family:宋体">方法返回布尔&#20540;</span><span lang="en-US" style="font-family:Calibri">(</span><span lang="zh-CN" style="font-family:宋体">函数式接口</span><span lang="en-US" style="font-family:Calibri">)</span><span lang="zh-CN" style="font-family:宋体">是一个可行的解决方法。查询条件当这个方法被调用的时候被传递过去。这个接口就像下面的那样：</span></p>
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_5_8444110" name="code" class="java"> public interface MyTest&lt;T&gt; {
+   public boolean test(T t);
+ }
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">更新之后的</span><span lang="en-US" style="font-family:Calibri">robot</span><span lang="zh-CN" style="font-family:宋体">类就像这样的：</span></p>
+<p><span lang="en-US" style="font-family:Consolas; color:#00B0F0">RoboContactsAnon</span><span lang="zh-CN" style="font-family:宋体">.</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">java</span></p>
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_6_3220641" name="code" class="java">  public class RoboContactAnon {
+
+   public void phoneContacts(List&lt;Person&gt; pl, MyTest&lt;Person&gt; aTest){
+     for(Person p:pl){
+       if (aTest.test(p)){
+         roboCall(p);
+       }
+     }
+   }
+
+   public void emailContacts(List&lt;Person&gt; pl, MyTest&lt;Person&gt; aTest){
+     for(Person p:pl){
+       if (aTest.test(p)){
+         roboEmail(p);
+       }
+     }
+   }
+
+   public void mailContacts(List&lt;Person&gt; pl, MyTest&lt;Person&gt; aTest){
+     for(Person p:pl){
+       if (aTest.test(p)){
+         roboMail(p);
+       }
+     }
+   }  
+
+   public void roboCall(Person p){
+     System.out.println(&quot;Calling &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getPhone());
+   }
+
+   public void roboEmail(Person p){
+     System.out.println(&quot;EMailing &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getEmail());
+   }
+
+   public void roboMail(Person p){
+     System.out.println(&quot;Mailing &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getAddress());
+   }
+
+ }
+</pre>
+
+<p>这无疑是一种改进的方法，因为只需要三个方法来执行机械手操作。可是，有个小问题就是方法在被调用的时候不优雅。我们看下这个类的测试类：</p>
+<p><span lang="en-US" style="font-family:Consolas; color:#00B0F0">RoboCallTest03</span><span lang="zh-CN" style="font-family:宋体">.</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">java</span></p>
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_7_7681525" name="code" class="java">package com.example.lambda;
+    import java.util.List;
+
+    /**
+     * @author MikeW
+     */
+    public class RoboCallTest03 {
+
+     public static void main(String[] args) {
+
+       List&lt;Person&gt; pl = Person.createShortList();
+       RoboContactAnon robo = new RoboContactAnon();
+
+       System.out.println(&quot;\n==== Test 03 ====&quot;);
+       System.out.println(&quot;\n=== Calling all Drivers ===&quot;);
+       robo.phoneContacts(pl,
+           new MyTest&lt;Person&gt;(){
+             @Override
+             public boolean test(Person p){
+               return p.getAge() &gt;=16;
+             }
+           }
+       );
+
+       System.out.println(&quot;\n=== Emailing all Draftees ===&quot;);
+       robo.emailContacts(pl,
+           new MyTest&lt;Person&gt;(){
+             @Override
+             public boolean test(Person p){
+               return p.getAge() &gt;= 18 &amp;&amp; p.getAge() &lt;= 25 &amp;&amp; p.getGender() == Gender.MALE;
+             }
+           }
+       );
+
+       System.out.println(&quot;\n=== Mail all Pilots ===&quot;);
+       robo.mailContacts(pl,
+           new MyTest&lt;Person&gt;(){
+             @Override
+             public boolean test(Person p){
+               return p.getAge() &gt;= 23 &amp;&amp; p.getAge() &lt;= 65;
+             }
+           }
+       );
+
+     }
+   }
+</pre>
+
+<p>这就是在实际中“垂直”问题的一个很好的例子。这个代码读起来有点困难。此外，我们还必须为每一个用例写自定义的查询条件。</p>
+<p><span lang="en-US" style="font-family:Calibri; font-weight:bold">Lambda</span><span lang="zh-CN" style="font-family:宋体; font-weight:bold">表达式恰到好处</span></p>
+<p><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式能够解决上述所有的问题</span><span lang="en-US" style="font-family:Calibri">.</span></p>
+<p><span style="font-weight:bold">java.util.function</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">在上一个例子中</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">MyTest</span><span lang="zh-CN" style="font-family:宋体">函数式接口将匿名内部类传给方法</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">可是</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">不必要再单独写个接口</span><span lang="en-US" style="font-family:Calibri">.Java<br> SE 8</span><span lang="zh-CN" style="font-family:宋体">提供了</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">java</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">util</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">function</span><span lang="zh-CN" style="font-family:宋体">包里面有许多标准的函数式接口</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">这个用例中</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Predicate</span><span lang="zh-CN" style="font-family:宋体">接口符合我们的需求。</span></p>
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_8_4758567" name="code" class="java"> public interface Predicate&lt;T&gt; {
+   public boolean test(T t);
+ }
+</pre>
+
+<p><span lang="en-US" style="font-family:Consolas; color:#00B0F0">test</span><span lang="zh-CN" style="font-family:宋体">方法带有一个泛型类和返回一个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">boolean</span><span lang="zh-CN" style="font-family:宋体">&#20540;。这正好是条件选择所需要的。下面是</span><span lang="en-US" style="font-family:Consolas">robot</span><span lang="zh-CN" style="font-family:宋体">类的最后版本。</span></p>
+<p><span style="font-weight:bold">RoboContactsLambda.java</span></p>
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_9_3297871" name="code" class="java">    package com.example.lambda;
+
+    import java.util.List;
+    import java.util.function.Predicate;
+
+    /**
+     *
+     * @author MikeW
+     */
+   public class RoboContactLambda {
+     public void phoneContacts(List&lt;Person&gt; pl, Predicate&lt;Person&gt; pred){
+       for(Person p:pl){
+         if (pred.test(p)){
+           roboCall(p);
+         }
+       }
+     }
+
+     public void emailContacts(List&lt;Person&gt; pl, Predicate&lt;Person&gt; pred){
+       for(Person p:pl){
+         if (pred.test(p)){
+           roboEmail(p);
+         }
+       }
+     }
+
+     public void mailContacts(List&lt;Person&gt; pl, Predicate&lt;Person&gt; pred){
+       for(Person p:pl){
+         if (pred.test(p)){
+           roboMail(p);
+         }
+       }
+     }  
+
+     public void roboCall(Person p){
+       System.out.println(&quot;Calling &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getPhone());
+     }
+
+     public void roboEmail(Person p){
+       System.out.println(&quot;EMailing &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getEmail());
+     }
+
+     public void roboMail(Person p){
+       System.out.println(&quot;Mailing &quot; + p.getGivenName() + &quot; &quot; + p.getSurName() + &quot; age &quot; + p.getAge() + &quot; at &quot; + p.getAddress());
+     }
+
+   }
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">这种途径只需要三个方法，一个为联系方法。</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式传递给方法来选择符合测试条件的</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Person</span><span lang="zh-CN" style="font-family:宋体">实体。</span></p>
+<p><span style="font-weight:bold">“垂直问题”解决</span></p>
+<p><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式解决了垂直问题，任何表达式都能够很容易的复用。再来看一下经过</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式更改之后新的测试类。</span></p>
+<p><span lang="en-US" style="font-family:Consolas; color:#00B0F0">RoboCallTest04</span><span lang="zh-CN" style="font-family:宋体">.</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">java</span></p>
+<pre code_snippet_id="204955" snippet_file_name="blog_20140225_10_26248" name="code" class="java">package com.example.lambda;
+    import java.util.List;
+    import java.util.function.Predicate;
+
+    /**
+     *
+     * @author MikeW
+     */
+   public class RoboCallTest04 {
+
+     public static void main(String[] args){
+
+       List&lt;Person&gt; pl = Person.createShortList();
+       RoboContactLambda robo = new RoboContactLambda();
+
+       // Predicates
+       Predicate&lt;Person&gt; allDrivers = p -&gt; p.getAge() &gt;= 16;
+       Predicate&lt;Person&gt; allDraftees = p -&gt; p.getAge() &gt;= 18 &amp;&amp; p.getAge() &lt;= 25 &amp;&amp; p.getGender() == Gender.MALE;
+       Predicate&lt;Person&gt; allPilots = p -&gt; p.getAge() &gt;= 23 &amp;&amp; p.getAge() &lt;= 65;
+
+       System.out.println(&quot;\n==== Test 04 ====&quot;);
+       System.out.println(&quot;\n=== Calling all Drivers ===&quot;);
+       robo.phoneContacts(pl, allDrivers);
+
+       System.out.println(&quot;\n=== Emailing all Draftees ===&quot;);
+       robo.emailContacts(pl, allDraftees);
+
+       System.out.println(&quot;\n=== Mail all Pilots ===&quot;);
+       robo.mailContacts(pl, allPilots);
+
+       // Mix and match becomes easy
+       System.out.println(&quot;\n=== Mail all Draftees ===&quot;);
+       robo.mailContacts(pl, allDraftees);  
+
+       System.out.println(&quot;\n=== Call all Pilots ===&quot;);
+       robo.phoneContacts(pl, allPilots);
+
+     }
+   }
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">注意每一组都设置了</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Predicate</span><span lang="zh-CN" style="font-family:宋体"> ：</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">allDrivers</span><span lang="zh-CN" style="font-family:宋体">,</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">allDraftees</span><span lang="zh-CN" style="font-family:宋体">,<br> 和</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">allPilots<br></span><span lang="zh-CN" style="font-family:宋体; color:#00B0F0">。</span><span lang="zh-CN" style="font-family:宋体">你可以传任意一个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Predicate</span><span lang="zh-CN" style="font-family:宋体"> 接口给这些联系方法。代码紧凑很容易读而且没有重复。</span></p>
+<p><span lang="en-US" style="font-family:Calibri"></span></p>
+<p>本章源码</p>
+<p><span lang="en-US" style="font-family:Calibri">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="http://www.oracle.com/webfolder/technetwork/tutorials/obe/java/Lambda-QuickStart/examples/RoboCallExample.zip" target="_blank" rel="external">点击打开链接</a></span></p>
+<p></p>
+<pre><code><span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+<span class="code">    作者：qarkly112649 发表于2014/2/25 22:18:27 [原文链接](http://blog.csdn.net/qarkly112649/article/details/19935375)</span>
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+<span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+阅读：291 评论：0 [<span class="link_label">查看评论</span>](<span class="link_url">http://blog.csdn.net/qarkly112649/article/details/19935375#comments</span>)
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+</code></pre>]]></content>
+    <summary type="html">
+    <![CDATA[<p><span lang="zh-CN" style="font-family:宋体; font-weight:bold">使用</span><span lang="en-US" style="font-family:Calibri; font-weight:bold">Lam]]>
+    </summary>
+    
+      <category term="Lambda" scheme="http://qarkly@github.com/tags/Lambda/"/>
+    
+      <category term="java8" scheme="http://qarkly@github.com/tags/java8/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[[译]JavaSE 8 :Lambda 快速学习（一）]]></title>
+    <link href="http://qarkly@github.com/2014/02/19/%E8%AF%91-JavaSE-8-Lambda-%E5%BF%AB%E9%80%9F%E5%AD%A6%E4%B9%A0%EF%BC%88%E4%B8%80%EF%BC%89/"/>
+    <id>http://qarkly@github.com/2014/02/19/译-JavaSE-8-Lambda-快速学习（一）/</id>
+    <published>2014-02-19T14:43:51.000Z</published>
+    <updated>2015-08-15T10:02:31.031Z</updated>
+    <content type="html"><![CDATA[<p><span style="color:#FF0000">注：此文章是Orcale的Lambda教程，第一次翻译发文，翻译有不对和不妥之处多多包涵，还请及时指正以免贻笑大方。。。。</span></p>
+<p></p>
+<p><span style="color:#FF0000">附上原文地址：<a href="http://www.oracle.com/webfolder/technetwork/tutorials/obe/java/Lambda-QuickStart/index.html" target="_blank" rel="external">点击打开链接</a></span></p>
+<p>概述</p>
+<p>目的</p>
+<p>&nbsp; 此教程是介绍在Java SE8中新添加的lambda表达式</p>
+<p>建议完成时间</p>
+<p>&nbsp; 约一个小时</p>
+<p>简介</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Lambda表达式是Java SE8 中新加入并且很重要的新特征,它们通过使用表达式提供了一种明确而简洁的方式来表示一个方法接口.Lambda表达式也改进了<span style="color:#00B0F0">C</span><span style="color:#00B0F0">ollection</span>库,使其从<span style="color:#00B0F0">Collection</span>遍历,过滤和抽取数据变得更加容易.另外,新的并发特征也提升在多核环境下的性能.</p>
+<p>&nbsp;&nbsp; 该Orcale示例(原文叫Orcale byExamp简称OBE)是对JavaSE8中lambda表达式的初步介绍.在对功能接口和新的lambda语法讨论之后,又对匿名内部类做了介绍.此外对几个常见的使用模式在使用lambda表达式的和没有使用lambda表达的做了展示.</p>
+<p>&nbsp;&nbsp; 下一部分评述一个常见的搜索用例和怎样通过使用包含lambda表达式的java代码来进行改进.另外对在<span style="color:#00B0F0">java.util.function</span>包中提供的几个常见的功能接口，如<span style="color:#00B0F0">Predicate</span>和<span style="color:#00B0F0">Function</span>做了实例展示。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 这些OBE完成了对java集合是如何通过使用lambda表达来更新的回顾。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 这些示例的源码也将提供给你。</p>
+<p>硬件和软件需求</p>
+<p>&nbsp;&nbsp;&nbsp; 下面是需要的硬件和软件的环境（注：只要支持java8的IDE都可以，个人推荐IntelliJ IDEA）</p>
+<div><br><table valign="top" border="1" cellpadding="0" cellspacing="0"><br><tbody><br><tr><br><td><br><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; JDK8<br><br></td><br></tr><br><tr><br><td><br><br>NetBeans7.4<br><br></td><br></tr><br></tbody><br></table><br></div>
+
+<p>先决条件</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 不打算翻译</p>
+<p>背景知识</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 在Java中匿名内部类是对那些在应用中可能只会发生一次的类的一种实现。例如，在标准的Swing和JavaFx应用的一些需要对键盘和鼠标事件进行处理的事件处理器。相比于对每一个事件写一个独立的事件处理类，你可以使用如下示例的写法</p>
+<pre code_snippet_id="195508" snippet_file_name="blog_20140219_1_2751454" name="code" class="java">JButton testButton = new JButton(&quot;Test Button&quot;);
+testButton.addActionListener(new ActionListener(){
+    @Override public void actionPerformed(ActionEvent ae){
+         System.out.println(&quot;Click Detected by Anon Class&quot;);
+      }
+  });
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">否则</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">你将要给每一个事件的</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">ActionListener</span><span lang="zh-CN" style="font-family:宋体">实现独立的类</span><span lang="en-US" style="font-family:Consolas">.</span><span lang="zh-CN" style="font-family:宋体">而这样在需要的地方创建类使得代码比较容易阅读</span><span lang="en-US" style="font-family:Consolas">.</span><span lang="zh-CN" style="font-family:宋体">但这样的代码是不优雅的</span><span lang="en-US" style="font-family:Consolas">,</span><span lang="zh-CN" style="font-family:宋体">因为这么多的代码其实只需要定义一个方法</span><span lang="en-US" style="font-family:Consolas">.</span></p>
+<p><span style="font-weight:bold">函数式接口（</span>Functional Interfaces 也有译作功能性接口，）<span style="font-weight:bold"></span></p>
+<p><span lang="zh-CN" style="font-family:宋体">如下是定义</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">ActionListener</span><span lang="zh-CN" style="font-family:宋体">接口的代码</span></p>
+<pre code_snippet_id="195508" snippet_file_name="blog_20140219_2_8367798" name="code" class="java">package java.awt.event;
+import java.util.EventListener;
+public interface ActionListener extends EventListener {
+
+   public void actionPerformed(ActionEvent e);
+
+}
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">这个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">ActionLisener</span><span lang="zh-CN" style="font-family:宋体">就是只有一个方法的接口。在</span><span lang="en-US" style="font-family:Calibri">Java<br> SE8</span><span lang="zh-CN" style="font-family:宋体">中，像这样形式的接口称之为“函数式接口”。注：这种类型的接口在之前称之为单个抽象方法类型（</span><span lang="en-US" style="font-family:Calibri">SAM</span><span lang="zh-CN" style="font-family:宋体">）</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">通过匿名内部类来使用函数式接口在</span><span lang="en-US" style="font-family:Calibri">java</span><span lang="zh-CN" style="font-family:宋体">中是很常见的模式。除了</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">EventListener</span><span lang="zh-CN" style="font-family:宋体">类，像</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Runnable</span><span lang="zh-CN" style="font-family:宋体">和</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Comparator</span><span lang="zh-CN" style="font-family:宋体">接口也是同样的使用方式。因此函数式接口都是在使用</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式中被利用到。</span></p>
+<p><span lang="en-US" style="font-family:Calibri; font-weight:bold">Lambda</span><span lang="zh-CN" style="font-family:宋体; font-weight:bold">表达式语法</span></p>
+<p><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式能够将五行代码转换到一个单独的语句从而解决匿名内部类的蓬松度问题。这个简单的解决方案解决了由内部类引起的“垂直问题”。</span></p>
+<p><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式由三个部分组成</span></p>
+<p>Argument List&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Arrow Token&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Body</p>
+<p>(int x, int y)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x &#43; y</p>
+<p><span lang="en-US" style="font-family:Calibri">Body</span><span lang="zh-CN" style="font-family:宋体">部分既可以是一个表达式也可以是语句块</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">如果是在表达式的形式</span><span lang="en-US" style="font-family:Calibri">,Body</span><span lang="zh-CN" style="font-family:宋体">部分只是被简单的计算然后返回&#20540;</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">如果是语句块的形式</span><span lang="en-US" style="font-family:Calibri">,Body</span><span lang="zh-CN" style="font-family:宋体">部分可以认为像方法体一样</span><span lang="en-US" style="font-family:Calibri">,return</span><span lang="zh-CN" style="font-family:宋体">语句将控制返回给匿名方法的调用者</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">break</span><span lang="zh-CN" style="font-family:宋体">和</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">continue</span><span lang="zh-CN" style="font-family:宋体">关键字处在顶层是非法的</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">但是允许放在循环中</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">如果</span><span lang="en-US" style="font-family:Calibri">Body</span><span lang="zh-CN" style="font-family:宋体">部分中产生结果</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">那么在每条控制路径都要返回&#20540;或者抛出异常</span><span lang="en-US" style="font-family:Calibri">.</span></p>
+<p>看下面的例子</p>
+<pre code_snippet_id="195508" snippet_file_name="blog_20140219_3_5096175" name="code" class="java">(int x, int y) -&gt; x + y
+
+() -&gt; 42
+
+(String s) -&gt; { System.out.println(s); }
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">第一个表达式带有两个整形参数</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">分别是</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">x</span><span lang="zh-CN" style="font-family:宋体">和</span><span lang="en-US" style="font-family:宋体; color:#00B0F0">y</span><span lang="zh-CN" style="font-family:宋体">然后</span><span lang="en-US" style="font-family:Calibri">Body</span><span lang="zh-CN" style="font-family:宋体">部分使用表达式形式将返回</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">x&#43;y</span><span lang="zh-CN" style="font-family:宋体">的&#20540;</span><span lang="en-US" style="font-family:Consolas">.</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">第二个表达式没有参数</span><span lang="en-US" style="font-family:Consolas">,</span><span lang="zh-CN" style="font-family:宋体">也是用表达式的形式将返回整型</span><span lang="en-US" style="font-family:Consolas">42.</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">第三个表达式带有</span><span lang="en-US" style="font-family:Calibri">String</span><span lang="zh-CN" style="font-family:宋体">参数</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">使用语句块的形式将向控制台输出这个</span><span lang="en-US" style="font-family:Calibri">String</span><span lang="zh-CN" style="font-family:宋体">&#20540;</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">没有返回&#20540;</span><span lang="en-US" style="font-family:Calibri">.</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">基本的语法都已经覆盖到了</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">下面看一些例子</span><span lang="en-US" style="font-family:Calibri">.</span></p>
+<p><span style="font-weight:bold">Lambda Example</span></p>
+<p>下面是之前介绍的例子的一些常见用例</p>
+<p><span style="font-weight:bold">Runnable Lambda</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">下面是怎么使用</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">来写</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Runnable</span></p>
+<pre code_snippet_id="195508" snippet_file_name="blog_20140219_4_3460755" name="code" class="java">public class RunnableTest {
+   public static void main(String[] args) {
+
+      System.out.println(&quot;=== RunnableTest ===&quot;);
+
+     // Anonymous Runnable
+     Runnable r1 = new Runnable(){
+
+       @Override
+       public void run(){
+         System.out.println(&quot;Hello world one!&quot;);
+       }
+     };
+
+     // Lambda Runnable
+     Runnable r2 = () -&gt; System.out.println(&quot;Hello world two!&quot;);
+
+     // Run em!
+     r1.run();
+     r2.run();
+
+   }
+ }
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">在上面的用例</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">要注意都没有传递任何参数也没有返回&#20540;</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Runnable</span><span lang="zh-CN" style="font-family:宋体">的</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式是使用语句块形式</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">能够将之前的五行代码转换成一条语句</span><span lang="en-US" style="font-family:Calibri">.</span></p>
+<p><span style="font-weight:bold">Comparator Lambda</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">在</span><span lang="en-US" style="font-family:Calibri">Java</span><span lang="zh-CN" style="font-family:宋体">中</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Comparator</span><span lang="zh-CN" style="font-family:宋体">类经常在集合的排序中使用</span><span lang="en-US" style="font-family:Consolas">.</span><span lang="zh-CN" style="font-family:宋体">下面的例子是一个由</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Person</span><span lang="zh-CN" style="font-family:宋体">构成的</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">ArrayList</span><span lang="zh-CN" style="font-family:宋体">在基于</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">surName</span><span lang="zh-CN" style="font-family:宋体">属性来排序</span><span lang="en-US" style="font-family:Consolas">.</span></p>
+<pre code_snippet_id="195508" snippet_file_name="blog_20140219_5_1268928" name="code" class="java"> public class Person {
+   private String givenName;
+   private String surName;
+   private int age;
+   private Gender gender;
+   private String eMail;
+   private String phone;
+   private String address;
+}
+</pre><span lang="zh-CN" style="font-family:宋体">下面的代码通过使用一个匿名内部类和两个</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式来运用</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Comparator</span>
+
+<pre code_snippet_id="195508" snippet_file_name="blog_20140219_6_7681660" name="code" class="java"> public class ComparatorTest {
+
+   public static void main(String[] args) {
+
+     List&lt;Person&gt; personList = Person.createShortList();
+
+     // Sort with Inner Class
+     Collections.sort(personList, new Comparator&lt;Person&gt;(){
+       public int compare(Person p1, Person p2){
+         return p1.getSurName().compareTo(p2.getSurName());
+       }
+     });
+
+     System.out.println(&quot;=== Sorted Asc SurName ===&quot;);
+     for(Person p:personList){
+       p.printName();
+     }
+
+     // Use Lambda instead
+
+     // Print Asc
+     System.out.println(&quot;=== Sorted Asc SurName ===&quot;);
+     Collections.sort(personList, (Person p1, Person p2) -&gt; p1.getSurName().compareTo(p2.getSurName()));
+
+     for(Person p:personList){
+       p.printName();
+     }
+
+     // Print Desc
+     System.out.println(&quot;=== Sorted Desc SurName ===&quot;);
+     Collections.sort(personList, (p1,  p2) -&gt; p2.getSurName().compareTo(p1.getSurName()));
+
+     for(Person p:personList){
+       p.printName();
+     }
+
+   }
+
+ }</pre>
+
+<p><span lang="en-US" style="font-family:Calibri">17-21</span><span lang="zh-CN" style="font-family:宋体">行的代码可以很容易的被</span><span lang="en-US" style="font-family:Calibri">32</span><span lang="zh-CN" style="font-family:宋体">行的</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式代替</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">我们注意到第一个</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式声明了参数类型然后传给表达式</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">可是正如你看到的第二个表达式一样</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">这是个可选的写法</span><span lang="en-US" style="font-family:Calibri">(</span><span lang="zh-CN" style="font-family:宋体">也可以不写参数的类型</span><span lang="en-US" style="font-family:Calibri">).Lambda</span><span lang="zh-CN" style="font-family:宋体">支持</span><span lang="en-US" style="font-family:Calibri">&quot;</span><span lang="zh-CN" style="font-family:宋体">目标类型匹配</span><span lang="en-US" style="font-family:Calibri">&quot;(</span><span lang="zh-CN" style="font-family:宋体">原文叫</span><span lang="en-US" style="font-family:Calibri"></span><span lang="zh-CN" style="font-family:Calibri">target<br> typing</span><span lang="en-US" style="font-family:Calibri">)</span><span lang="zh-CN" style="font-family:宋体">它将从在上下文中被使用的对象类型中推导</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体"> 因为我们需要给用通用定义的</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Comparator</span><span lang="zh-CN" style="font-family:宋体">指定一个类型</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">编译器可以推导出这两个参数是</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Person</span><span lang="zh-CN" style="font-family:宋体">类型的</span><span lang="en-US" style="font-family:Consolas">.</span></p>
+<p><span style="font-weight:bold">Listener Lambda</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">最后让我们再来回顾下这个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">ActionListener</span><span lang="zh-CN" style="font-family:宋体"> 例子</span></p>
+<pre code_snippet_id="195508" snippet_file_name="blog_20140219_7_8903159" name="code" class="java"> public class ListenerTest {
+   public static void main(String[] args) {
+
+     JButton testButton = new JButton(&quot;Test Button&quot;);
+     testButton.addActionListener(new ActionListener(){
+     @Override public void actionPerformed(ActionEvent ae){
+         System.out.println(&quot;Click Detected by Anon Class&quot;);
+       }
+     });
+
+     testButton.addActionListener(e -&gt; System.out.println(&quot;Click Detected by Lambda Listner&quot;));
+
+     // Swing stuff
+     JFrame frame = new JFrame(&quot;Listener Test&quot;);
+     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+     frame.add(testButton, BorderLayout.CENTER);
+     frame.pack();
+     frame.setVisible(true);
+
+   }
+ }
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">注意这个</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式作为一个参数传递的</span><span lang="en-US" style="font-family:Calibri">,&quot;</span><span lang="zh-CN" style="font-family:宋体">目标类型匹配</span><span lang="en-US" style="font-family:Calibri">&quot;(Target<br> typing)</span><span lang="zh-CN" style="font-family:宋体">可以在包括下面的一些上下文中使用：</span></p>
+<ul>
+<li><span lang="zh-CN" style="font-family:宋体"></span></li>
+</ul>
+<p>变量声明</p>
+<ul>
+<li><span lang="zh-CN" style="font-family:宋体"></span></li>
+</ul>
+<p>Assignments</p>
+<ul>
+<li><span lang="zh-CN" style="font-family:宋体"></span></li>
+</ul>
+<p>返回语句</p>
+<ul>
+<li><span lang="zh-CN" style="font-family:宋体"></span></li>
+</ul>
+<p>数组初始化</p>
+<ul>
+<li><span lang="zh-CN" style="font-family:宋体"></span></li>
+</ul>
+<p>方法或者构造函数的参数</p>
+<ul>
+<li><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表示体</span></li>
+<li><span lang="zh-CN" style="font-family:宋体"></span></li>
+</ul>
+<p><span lang="zh-CN" style="font-family:宋体">条件表达式</span><span lang="en-US" style="font-family:Calibri"> ?:</span></p>
+<ul>
+<li><span lang="zh-CN" style="font-family:宋体"></span></li>
+</ul>
+<p>Cast expressions</p>
+<p>源码</p>
+<p>&nbsp;<a href="http://www.oracle.com/webfolder/technetwork/tutorials/obe/java/Lambda-QuickStart/examples/LambdaExamples01.zip" target="_blank" rel="external">点击打开链接</a></p>
+<p><span style="color:#FF0000">未完，待续。。。。</span></p>
+<pre><code><span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+<span class="code">    作者：qarkly112649 发表于2014/2/19 22:43:51 [原文链接](http://blog.csdn.net/qarkly112649/article/details/19506343)</span>
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+<span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+阅读：557 评论：5 [<span class="link_label">查看评论</span>](<span class="link_url">http://blog.csdn.net/qarkly112649/article/details/19506343#comments</span>)
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+</code></pre>]]></content>
+    <summary type="html">
+    <![CDATA[<p><span style="color:#FF0000">注：此文章是Orcale的Lambda教程，第一次翻译发文，翻译有不对和不妥之处多多包涵，还请及时指正以免贻笑大方。。。。</span></p>
+<p></p>
+<p><span style="color:#FF000]]>
+    </summary>
+    
+      <category term="Lambda" scheme="http://qarkly@github.com/tags/Lambda/"/>
+    
+      <category term="java8" scheme="http://qarkly@github.com/tags/java8/"/>
+    
+  </entry>
+  
+</feed>

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>[原]责任链模式 | qarkly的博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="注：第一节 部分引自：http://www.cnblogs.com/kym/archive/2009/04/06/1430078.html一、责任链模式（Chain of Responsiblity）&amp;nbsp; &amp;nbsp; 定义：　使多个对象都有机会处理请求，从而避免请求的发送者和接受者之间的耦合关系。将这个对象连成一条链，并沿着这条链传递该请求，直到有一个对象处理他为止。&amp;nbsp; &amp;nb">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[原]责任链模式">
+<meta property="og:url" content="http://qarkly@github.com/2014/06/19/原-责任链模式/index.html">
+<meta property="og:site_name" content="qarkly的博客">
+<meta property="og:description" content="注：第一节 部分引自：http://www.cnblogs.com/kym/archive/2009/04/06/1430078.html一、责任链模式（Chain of Responsiblity）&amp;nbsp; &amp;nbsp; 定义：　使多个对象都有机会处理请求，从而避免请求的发送者和接受者之间的耦合关系。将这个对象连成一条链，并沿着这条链传递该请求，直到有一个对象处理他为止。&amp;nbsp; &amp;nb">
+<meta property="og:image" content="http://img.blog.csdn.net/20140619093638765?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcWFya2x5MTEyNjQ5/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast">
+<meta property="og:updated_time" content="2015-08-15T09:36:39.308Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="[原]责任链模式">
+<meta name="twitter:description" content="注：第一节 部分引自：http://www.cnblogs.com/kym/archive/2009/04/06/1430078.html一、责任链模式（Chain of Responsiblity）&amp;nbsp; &amp;nbsp; 定义：　使多个对象都有机会处理请求，从而避免请求的发送者和接受者之间的耦合关系。将这个对象连成一条链，并沿着这条链传递该请求，直到有一个对象处理他为止。&amp;nbsp; &amp;nb">
+  
+    <link rel="alternative" href="/atom.xml" title="qarkly的博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link rel="stylesheet" href="/css/style.css" type="text/css">
+</head>
+<body>
+  <div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+	<header id="header" class="inner">
+		<a href="/" class="profilepic">
+			
+			<img lazy-src="/selfi.png" class="js-avatar">
+			
+		</a>
+
+		<hgroup>
+		  <h1 class="header-author"><a href="/">qarkly</a></h1>
+		</hgroup>
+
+		
+		<p class="header-subtitle">个人技术博客</p>
+		
+
+		
+			<div class="switch-btn">
+				<div class="icon">
+					<div class="icon-ctn">
+						<div class="icon-wrap icon-house" data-idx="0">
+							<div class="birdhouse"></div>
+							<div class="birdhouse_holes"></div>
+						</div>
+						<div class="icon-wrap icon-ribbon hide" data-idx="1">
+							<div class="ribbon"></div>
+						</div>
+						
+						<div class="icon-wrap icon-link hide" data-idx="2">
+							<div class="loopback_l"></div>
+							<div class="loopback_r"></div>
+						</div>
+						
+						
+						<div class="icon-wrap icon-me hide" data-idx="3">
+							<div class="user"></div>
+							<div class="shoulder"></div>
+						</div>
+						
+					</div>
+					
+				</div>
+				<div class="tips-box hide">
+					<div class="tips-arrow"></div>
+					<ul class="tips-inner">
+						<li>菜单</li>
+						<li>标签</li>
+						
+						<li>友情链接</li>
+						
+						
+						<li>关于我</li>
+						
+					</ul>
+				</div>
+			</div>
+		
+
+		<div class="switch-area">
+			<div class="switch-wrap">
+				<section class="switch-part switch-part1">
+					<nav class="header-menu">
+						<ul>
+						
+							<li><a href="/">主页</a></li>
+				        
+							<li><a href="/archives">所有文章</a></li>
+				        
+							<li><a href="/tags/随笔">随笔</a></li>
+				        
+						</ul>
+					</nav>
+					<nav class="header-nav">
+						<div class="social">
+							
+								<a class="github" target="_blank" href="https://github.com/qarkly" title="github">github</a>
+					        
+								<a class="weibo" target="_blank" href="http://weibo.com/qarkly" title="weibo">weibo</a>
+					        
+								<a class="rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+					        
+						</div>
+					</nav>
+				</section>
+				
+				
+				<section class="switch-part switch-part2">
+					<div class="widget tagcloud" id="js-tagcloud">
+						<a href="/tags/Jackrabbit/" style="font-size: 10px;">Jackrabbit</a> <a href="/tags/Lambda/" style="font-size: 20px;">Lambda</a> <a href="/tags/java/" style="font-size: 20px;">java</a> <a href="/tags/java8/" style="font-size: 20px;">java8</a> <a href="/tags/mina/" style="font-size: 10px;">mina</a> <a href="/tags/内容仓库/" style="font-size: 10px;">内容仓库</a> <a href="/tags/生活/" style="font-size: 10px;">生活</a> <a href="/tags/算法/" style="font-size: 15px;">算法</a> <a href="/tags/系统知识/" style="font-size: 10px;">系统知识</a> <a href="/tags/设计模式/" style="font-size: 15px;">设计模式</a> <a href="/tags/责任链/" style="font-size: 10px;">责任链</a> <a href="/tags/责任链模式/" style="font-size: 10px;">责任链模式</a> <a href="/tags/随笔/" style="font-size: 10px;">随笔</a>
+					</div>
+				</section>
+				
+				
+				
+				<section class="switch-part switch-part3">
+					<div id="js-friends">
+					
+			          <a target="_blank" class="main-nav-link switch-friends-link" href="http://blog.csdn.net/qarkly112649">csdn的博客</a>
+			        
+			        </div>
+				</section>
+				
+
+				
+				
+				<section class="switch-part switch-part4">
+				
+					<div id="js-aboutme">南京邮电大学09级,就职于华为从事web相关工作…</div>
+				</section>
+				
+			</div>
+		</div>
+	</header>				
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+  	<div class="overlay">
+  		<div class="slider-trigger"></div>
+  		<h1 class="header-author js-mobile-header hide">qarkly</h1>
+  	</div>
+	<div class="intrude-less">
+		<header id="header" class="inner">
+			<div class="profilepic">
+				<img lazy-src="/selfi.png" class="js-avatar">
+			</div>
+			<hgroup>
+			  <h1 class="header-author">qarkly</h1>
+			</hgroup>
+			
+			<p class="header-subtitle">个人技术博客</p>
+			
+			<nav class="header-menu">
+				<ul>
+				
+					<li><a href="/">主页</a></li>
+		        
+					<li><a href="/archives">所有文章</a></li>
+		        
+					<li><a href="/tags/随笔">随笔</a></li>
+		        
+		        <div class="clearfix"></div>
+				</ul>
+			</nav>
+			<nav class="header-nav">
+				<div class="social">
+					
+						<a class="github" target="_blank" href="https://github.com/qarkly" title="github">github</a>
+			        
+						<a class="weibo" target="_blank" href="http://weibo.com/qarkly" title="weibo">weibo</a>
+			        
+						<a class="rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+			        
+				</div>
+			</nav>
+		</header>				
+	</div>
+</nav>
+      <div class="body-wrap"><article id="post-原-责任链模式" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2014/06/19/原-责任链模式/" class="article-date">
+  	<time datetime="2014-06-19T01:38:58.000Z" itemprop="datePublished">2014-06-19</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      [原]责任链模式
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+        
+
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <div><span style="">注：第一节 部分引自：<a href="http://www.cnblogs.com/kym/archive/2009/04/06/1430078.html" target="_blank" rel="external">http://www.cnblogs.com/kym/archive/2009/04/06/1430078.html</a><br><br>一、责任链模式（Chain of Responsiblity）</span><br><div style="">&nbsp; &nbsp; 定义：　<span style="font-family:微软雅黑">使多个对象都有机会处理请求，从而避免请求的发送者和接受者之间的耦合关系。将这个对象连成一条链，并沿着这条链传递该请求，直到有一个对象处理他为止。</span></div><br><div style=""><span style="font-family:微软雅黑">&nbsp; &nbsp; &nbsp; &nbsp;结构实图：</span></div><br>&gt; &gt; &gt; &gt; <div><img src="http://img.blog.csdn.net/20140619093638765?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcWFya2x5MTEyNjQ5/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt=""></div><br>&gt;<br>&gt; 责任链模式涉及角色如下：<br>&gt; <em>   待处理（Client）角色：一个需要处理的请求，可以是消息或者其他<br>&gt; </em>   抽象处理者（Handler）角色：定义一个对外处理请求的接口。由它将请求分发到具体处理者（ ConcreteHandler）角色进行逐次请求处理。抽象处理者（Handler）角色和具体处理者（ConcreteHandler）角色是聚合关系<br>&gt; <em>   具体处理者（ConcreteHandler）角色：具体处理者接受到请求时，对其感兴趣的消息处理，或者传递给下个具体处理者处理<br><span style="">二、简单责任链模式的实现</span><br><div style=""><br>&gt; <div>接口定义：<br>&gt;<br>&gt; <pre name="code" class="java">public interface Filter {<br>&gt;<br>&gt;      public void messageReceived(String msgType,List&lt;String&gt; contents,NextFliter nextFliter);<br>&gt;<br>&gt;      public static interface NextFliter{<br>&gt;<br>&gt;             void doFilter(String msgType,List&lt;String&gt; contents);<br>&gt;<br>&gt;      }<br>&gt;<br>&gt;      public static interface FilterChain{<br>&gt;             public void addFirst(Filter filter);<br>&gt;             public void addLast(Filter filter);<br>&gt;             public void messageReceived(String msgType, List&lt;String&gt; contents);<br>&gt;      }<br>&gt;<br>&gt; }</pre><br>&gt;<br>&gt; </div><br>&gt;<br>&gt; <div>接口详细说明：</div><br>&gt;<br>&gt; <div><br>&gt;<br>&gt;<br>&gt; </div></div></em>   Filter接口：对应责任链模式中的就是具体处理者（ConcreteHandler）角色，只有一个方法<span style="">messageReceived</span><span style="">(String msgType,List&lt;String&gt; contents,NextFliter nextFliter)。其中msgType和contents就是需要处理的请求消息，对应责任链中的待处理（Client）角色。nextFliter是调用下一个具体处理（ConcreteHandler）角色，这样做的好处就是Filter不必只有下一个Filter的引用。具体如何实现见下面的FilterChain的实现</span><br>&gt; <em>   FilterChain接口：对应责任链模式中的抽象处理（Handler）者角色。该接口持有所有的Filter，addFirst(Filter filter)和addLast(Filter filter)方法就是向FilterChain中加入具体处理者（ConcreteHandler）角色。当请求消息到来时，FilterChain调用自身的messageReceived方法，将请求传给第一个Filter，Filter再通过自己的messageReceived方法对请求处理或者传递给下一个Filter<br>&gt; </em>   NextFliter接口：从字面意思即下一个Filter，但这个接口同样由FilterChain实现，此接口主要是通知FilterChain获取下一个Filter处理请求消息<br>&gt;<br>&gt; FilterChain具体实现：</div><br>&gt;<br>&gt; <div><pre name="code" class="java">public class DefaultFilterChain implements Filter.NextFliter,Filter.FilterChain {<br>&gt;      private LinkedList&lt;Filter&gt; fliters = new LinkedList&lt;Filter&gt;();<br>&gt;      private int index = 0;<br>&gt;<br>&gt;      public DefaultFilterChain(){}<br>&gt;      public void addLast(Filter fliter) {<br>&gt;             if (fliter == null)<br>&gt;                  return;<br>&gt;             fliters.addLast(fliter);<br>&gt;      }<br>&gt;      public void addFirst(Filter fliter) {<br>&gt;             if (fliter == null)<br>&gt;                  return;<br>&gt;             fliters.addFirst(fliter);<br>&gt;      }<br>&gt;<br>&gt;      public  void messageReceived(String msgType, List&lt;String&gt; contents) {<br>&gt;             index = -1;<br>&gt;            doFilter(msgType, contents);<br>&gt;      }<br>&gt;<br>&gt;      public void doFilter(String msgType, List&lt;String&gt; contents) {<br>&gt;             index++;<br>&gt;             if( index &lt; fliters.size()){<br>&gt;                  fliters.get( index).messageReceived(msgType, contents, this);<br>&gt;            }<br>&gt;      }<br>&gt; }</pre><br>&gt;<br>&gt; </div><br>&gt;<br>&gt; <div>FilterChain实现总结：</div><br>&gt;<br>&gt; <div>&nbsp; &nbsp; &nbsp; 优点</div><br><br>&gt; &gt; 1.  Filters使用链表存储，实现简单。每个Filter不必引用下一个Filter，由FilterChain实现，这样Filter实现比较简单方便<br>&gt; &gt; 2.  FilterChain同时实现NextFliter，每个Filter在调用下一个Filter时只需要调用nextFilter.doFilter(…)方法，这样做实现了接口隔离的效果<br>&gt; &gt; 不足<br>&gt;<br>&gt; &gt; 1.  内部使用index，造成线程不安全，如果对messageReceived方法同步代价太高，不合适<br>&gt; &gt; 2.  虽然FilterChain和NextFilter起到接口隔离效果，但两个接口同时由<span style="">DefaultFilterChain实现，代码耦合度太高，不利于拓展</span><br>&gt; &gt; 3.  <span style="">对请求消息不够抽象，造成功能单一</span><br>&gt; &gt; 4.  <span style="">只能单向过滤处理消息，不能反向</span><br>&gt; &gt;<br>&gt; &gt; 优化空间<br>&gt; &gt; 1.  不使用LinkedList，自己实现单向链表或者双向链表<br>&gt; &gt; 2.  使用双向链表实现双向过滤处理，既可以处理messageReceived消息，又可以处理messageSent消息<br>&gt; &gt; 3.  FilterChain和NextFilter分开实现，降低耦合度<br>&gt; &gt; 有机会介绍下在Mina中责任链是如何实现的…<br>
+
+<pre><code><span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+<span class="code">    作者：qarkly112649 发表于2014/6/19 9:38:58 [原文链接](http://blog.csdn.net/qarkly112649/article/details/32312037)</span>
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+<span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+阅读：208 评论：0 [<span class="link_label">查看评论</span>](<span class="link_url">http://blog.csdn.net/qarkly112649/article/details/32312037#comments</span>)
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+</code></pre>
+      
+    </div>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/06/29/原-红黑树的java实现/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption"><</strong>
+      <div class="article-nav-title">
+        
+          [原]红黑树的java实现
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/06/05/责任链模式的使用/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">责任链模式的使用</div>
+      <strong class="article-nav-caption">></strong>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<div class="share">
+	<!-- JiaThis Button BEGIN -->
+	<div class="jiathis_style">
+		<span class="jiathis_txt">分享到：</span>
+		<a class="jiathis_button_tsina"></a>
+		<a class="jiathis_button_cqq"></a>
+		<a class="jiathis_button_douban"></a>
+		<a class="jiathis_button_weixin"></a>
+		<a class="jiathis_button_tumblr"></a>
+		<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+	</div>
+	<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=1405949716054953" charset="utf-8"></script>
+	<!-- JiaThis Button END -->
+</div>
+
+
+
+<div class="duoshuo">
+	<!-- 多说评论框 start -->
+	<div class="ds-thread" data-thread-key="原-责任链模式" data-title="[原]责任链模式" data-url="http://qarkly@github.com/2014/06/19/原-责任链模式/"></div>
+	<!-- 多说评论框 end -->
+	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+	<script type="text/javascript">
+	var duoshuoQuery = {short_name:"true"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		 || document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+	<!-- 多说公共JS代码 end -->
+</div>
+
+
+
+
+</div>
+      <footer id="footer">
+  <div class="outer">
+    <div id="footer-info">
+    	<div class="footer-left">
+    		&copy; 2015 qarkly
+    	</div>
+      	<div class="footer-right">
+      		<a href="http://hexo.io/" target="_blank">Hexo</a>  Theme <a href="https://github.com/litten/hexo-theme-yilia" target="_blank">Yilia</a> by Litten
+      	</div>
+    </div>
+  </div>
+</footer>
+    </div>
+    
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css" type="text/css">
+
+
+<script>
+	var yiliaConfig = {
+		fancybox: true,
+		mathjax: true,
+		animate: true,
+		isHome: false,
+		isPost: true,
+		isArchive: false,
+		isTag: false,
+		isCategory: false,
+		open_in_new: false
+	}
+</script>
+<script src="http://7.url.cn/edu/jslib/comb/require-2.1.6,jquery-1.9.1.min.js" type="text/javascript"></script>
+<script src="/js/main.js" type="text/javascript"></script>
+
+
+
+
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+    tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+        processEscapes: true,
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    }
+});
+
+MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';                 
+    }       
+});
+</script>
+
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+  </div>
+</body>
+</html>

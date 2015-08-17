@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>[译]JavaSE 8 :Lambda 快速学习（一） | qarkly的博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="注：此文章是Orcale的Lambda教程，第一次翻译发文，翻译有不对和不妥之处多多包涵，还请及时指正以免贻笑大方。。。。
+
+附上原文地址：点击打开链接
+概述
+目的
+&amp;nbsp; 此教程是介绍在Java SE8中新添加的lambda表达式
+建议完成时间
+&amp;nbsp; 约一个小时
+简介
+&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; Lambda表达式是Java">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[译]JavaSE 8 :Lambda 快速学习（一）">
+<meta property="og:url" content="http://qarkly@github.com/2014/02/19/译-JavaSE-8-Lambda-快速学习（一）/index.html">
+<meta property="og:site_name" content="qarkly的博客">
+<meta property="og:description" content="注：此文章是Orcale的Lambda教程，第一次翻译发文，翻译有不对和不妥之处多多包涵，还请及时指正以免贻笑大方。。。。
+
+附上原文地址：点击打开链接
+概述
+目的
+&amp;nbsp; 此教程是介绍在Java SE8中新添加的lambda表达式
+建议完成时间
+&amp;nbsp; 约一个小时
+简介
+&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; Lambda表达式是Java">
+<meta property="og:updated_time" content="2015-08-15T10:02:31.031Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="[译]JavaSE 8 :Lambda 快速学习（一）">
+<meta name="twitter:description" content="注：此文章是Orcale的Lambda教程，第一次翻译发文，翻译有不对和不妥之处多多包涵，还请及时指正以免贻笑大方。。。。
+
+附上原文地址：点击打开链接
+概述
+目的
+&amp;nbsp; 此教程是介绍在Java SE8中新添加的lambda表达式
+建议完成时间
+&amp;nbsp; 约一个小时
+简介
+&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; Lambda表达式是Java">
+  
+    <link rel="alternative" href="/atom.xml" title="qarkly的博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link rel="stylesheet" href="/css/style.css" type="text/css">
+</head>
+<body>
+  <div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+	<header id="header" class="inner">
+		<a href="/" class="profilepic">
+			
+			<img lazy-src="/selfi.png" class="js-avatar">
+			
+		</a>
+
+		<hgroup>
+		  <h1 class="header-author"><a href="/">qarkly</a></h1>
+		</hgroup>
+
+		
+		<p class="header-subtitle">个人技术博客</p>
+		
+
+		
+			<div class="switch-btn">
+				<div class="icon">
+					<div class="icon-ctn">
+						<div class="icon-wrap icon-house" data-idx="0">
+							<div class="birdhouse"></div>
+							<div class="birdhouse_holes"></div>
+						</div>
+						<div class="icon-wrap icon-ribbon hide" data-idx="1">
+							<div class="ribbon"></div>
+						</div>
+						
+						<div class="icon-wrap icon-link hide" data-idx="2">
+							<div class="loopback_l"></div>
+							<div class="loopback_r"></div>
+						</div>
+						
+						
+						<div class="icon-wrap icon-me hide" data-idx="3">
+							<div class="user"></div>
+							<div class="shoulder"></div>
+						</div>
+						
+					</div>
+					
+				</div>
+				<div class="tips-box hide">
+					<div class="tips-arrow"></div>
+					<ul class="tips-inner">
+						<li>菜单</li>
+						<li>标签</li>
+						
+						<li>友情链接</li>
+						
+						
+						<li>关于我</li>
+						
+					</ul>
+				</div>
+			</div>
+		
+
+		<div class="switch-area">
+			<div class="switch-wrap">
+				<section class="switch-part switch-part1">
+					<nav class="header-menu">
+						<ul>
+						
+							<li><a href="/">主页</a></li>
+				        
+							<li><a href="/archives">所有文章</a></li>
+				        
+							<li><a href="/tags/随笔">随笔</a></li>
+				        
+						</ul>
+					</nav>
+					<nav class="header-nav">
+						<div class="social">
+							
+								<a class="github" target="_blank" href="https://github.com/qarkly" title="github">github</a>
+					        
+								<a class="weibo" target="_blank" href="http://weibo.com/qarkly" title="weibo">weibo</a>
+					        
+								<a class="rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+					        
+						</div>
+					</nav>
+				</section>
+				
+				
+				<section class="switch-part switch-part2">
+					<div class="widget tagcloud" id="js-tagcloud">
+						<a href="/tags/Jackrabbit/" style="font-size: 10px;">Jackrabbit</a> <a href="/tags/Lambda/" style="font-size: 20px;">Lambda</a> <a href="/tags/java/" style="font-size: 20px;">java</a> <a href="/tags/java8/" style="font-size: 20px;">java8</a> <a href="/tags/mina/" style="font-size: 10px;">mina</a> <a href="/tags/内容仓库/" style="font-size: 10px;">内容仓库</a> <a href="/tags/生活/" style="font-size: 10px;">生活</a> <a href="/tags/算法/" style="font-size: 15px;">算法</a> <a href="/tags/系统知识/" style="font-size: 10px;">系统知识</a> <a href="/tags/设计模式/" style="font-size: 15px;">设计模式</a> <a href="/tags/责任链/" style="font-size: 10px;">责任链</a> <a href="/tags/责任链模式/" style="font-size: 10px;">责任链模式</a> <a href="/tags/随笔/" style="font-size: 10px;">随笔</a>
+					</div>
+				</section>
+				
+				
+				
+				<section class="switch-part switch-part3">
+					<div id="js-friends">
+					
+			          <a target="_blank" class="main-nav-link switch-friends-link" href="http://blog.csdn.net/qarkly112649">csdn的博客</a>
+			        
+			        </div>
+				</section>
+				
+
+				
+				
+				<section class="switch-part switch-part4">
+				
+					<div id="js-aboutme">南京邮电大学09级,就职于华为从事web相关工作…</div>
+				</section>
+				
+			</div>
+		</div>
+	</header>				
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+  	<div class="overlay">
+  		<div class="slider-trigger"></div>
+  		<h1 class="header-author js-mobile-header hide">qarkly</h1>
+  	</div>
+	<div class="intrude-less">
+		<header id="header" class="inner">
+			<div class="profilepic">
+				<img lazy-src="/selfi.png" class="js-avatar">
+			</div>
+			<hgroup>
+			  <h1 class="header-author">qarkly</h1>
+			</hgroup>
+			
+			<p class="header-subtitle">个人技术博客</p>
+			
+			<nav class="header-menu">
+				<ul>
+				
+					<li><a href="/">主页</a></li>
+		        
+					<li><a href="/archives">所有文章</a></li>
+		        
+					<li><a href="/tags/随笔">随笔</a></li>
+		        
+		        <div class="clearfix"></div>
+				</ul>
+			</nav>
+			<nav class="header-nav">
+				<div class="social">
+					
+						<a class="github" target="_blank" href="https://github.com/qarkly" title="github">github</a>
+			        
+						<a class="weibo" target="_blank" href="http://weibo.com/qarkly" title="weibo">weibo</a>
+			        
+						<a class="rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+			        
+				</div>
+			</nav>
+		</header>				
+	</div>
+</nav>
+      <div class="body-wrap"><article id="post-译-JavaSE-8-Lambda-快速学习（一）" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2014/02/19/译-JavaSE-8-Lambda-快速学习（一）/" class="article-date">
+  	<time datetime="2014-02-19T14:43:51.000Z" itemprop="datePublished">2014-02-19</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      [译]JavaSE 8 :Lambda 快速学习（一）
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+	<div class="article-tag tagcloud">
+		<ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Lambda/">Lambda</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/java8/">java8</a></li></ul>
+	</div>
+
+        
+
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p><span style="color:#FF0000">注：此文章是Orcale的Lambda教程，第一次翻译发文，翻译有不对和不妥之处多多包涵，还请及时指正以免贻笑大方。。。。</span></p>
+<p></p>
+<p><span style="color:#FF0000">附上原文地址：<a href="http://www.oracle.com/webfolder/technetwork/tutorials/obe/java/Lambda-QuickStart/index.html" target="_blank" rel="external">点击打开链接</a></span></p>
+<p>概述</p>
+<p>目的</p>
+<p>&nbsp; 此教程是介绍在Java SE8中新添加的lambda表达式</p>
+<p>建议完成时间</p>
+<p>&nbsp; 约一个小时</p>
+<p>简介</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Lambda表达式是Java SE8 中新加入并且很重要的新特征,它们通过使用表达式提供了一种明确而简洁的方式来表示一个方法接口.Lambda表达式也改进了<span style="color:#00B0F0">C</span><span style="color:#00B0F0">ollection</span>库,使其从<span style="color:#00B0F0">Collection</span>遍历,过滤和抽取数据变得更加容易.另外,新的并发特征也提升在多核环境下的性能.</p>
+<p>&nbsp;&nbsp; 该Orcale示例(原文叫Orcale byExamp简称OBE)是对JavaSE8中lambda表达式的初步介绍.在对功能接口和新的lambda语法讨论之后,又对匿名内部类做了介绍.此外对几个常见的使用模式在使用lambda表达式的和没有使用lambda表达的做了展示.</p>
+<p>&nbsp;&nbsp; 下一部分评述一个常见的搜索用例和怎样通过使用包含lambda表达式的java代码来进行改进.另外对在<span style="color:#00B0F0">java.util.function</span>包中提供的几个常见的功能接口，如<span style="color:#00B0F0">Predicate</span>和<span style="color:#00B0F0">Function</span>做了实例展示。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 这些OBE完成了对java集合是如何通过使用lambda表达来更新的回顾。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 这些示例的源码也将提供给你。</p>
+<p>硬件和软件需求</p>
+<p>&nbsp;&nbsp;&nbsp; 下面是需要的硬件和软件的环境（注：只要支持java8的IDE都可以，个人推荐IntelliJ IDEA）</p>
+<div><br><table valign="top" border="1" cellpadding="0" cellspacing="0"><br><tbody><br><tr><br><td><br><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; JDK8<br><br></td><br></tr><br><tr><br><td><br><br>NetBeans7.4<br><br></td><br></tr><br></tbody><br></table><br></div>
+
+<p>先决条件</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 不打算翻译</p>
+<p>背景知识</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 在Java中匿名内部类是对那些在应用中可能只会发生一次的类的一种实现。例如，在标准的Swing和JavaFx应用的一些需要对键盘和鼠标事件进行处理的事件处理器。相比于对每一个事件写一个独立的事件处理类，你可以使用如下示例的写法</p>
+<pre code_snippet_id="195508" snippet_file_name="blog_20140219_1_2751454" name="code" class="java">JButton testButton = new JButton(&quot;Test Button&quot;);
+testButton.addActionListener(new ActionListener(){
+    @Override public void actionPerformed(ActionEvent ae){
+         System.out.println(&quot;Click Detected by Anon Class&quot;);
+      }
+  });
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">否则</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">你将要给每一个事件的</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">ActionListener</span><span lang="zh-CN" style="font-family:宋体">实现独立的类</span><span lang="en-US" style="font-family:Consolas">.</span><span lang="zh-CN" style="font-family:宋体">而这样在需要的地方创建类使得代码比较容易阅读</span><span lang="en-US" style="font-family:Consolas">.</span><span lang="zh-CN" style="font-family:宋体">但这样的代码是不优雅的</span><span lang="en-US" style="font-family:Consolas">,</span><span lang="zh-CN" style="font-family:宋体">因为这么多的代码其实只需要定义一个方法</span><span lang="en-US" style="font-family:Consolas">.</span></p>
+<p><span style="font-weight:bold">函数式接口（</span>Functional Interfaces 也有译作功能性接口，）<span style="font-weight:bold"></span></p>
+<p><span lang="zh-CN" style="font-family:宋体">如下是定义</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">ActionListener</span><span lang="zh-CN" style="font-family:宋体">接口的代码</span></p>
+<pre code_snippet_id="195508" snippet_file_name="blog_20140219_2_8367798" name="code" class="java">package java.awt.event;
+import java.util.EventListener;
+public interface ActionListener extends EventListener {
+
+   public void actionPerformed(ActionEvent e);
+
+}
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">这个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">ActionLisener</span><span lang="zh-CN" style="font-family:宋体">就是只有一个方法的接口。在</span><span lang="en-US" style="font-family:Calibri">Java<br> SE8</span><span lang="zh-CN" style="font-family:宋体">中，像这样形式的接口称之为“函数式接口”。注：这种类型的接口在之前称之为单个抽象方法类型（</span><span lang="en-US" style="font-family:Calibri">SAM</span><span lang="zh-CN" style="font-family:宋体">）</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">通过匿名内部类来使用函数式接口在</span><span lang="en-US" style="font-family:Calibri">java</span><span lang="zh-CN" style="font-family:宋体">中是很常见的模式。除了</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">EventListener</span><span lang="zh-CN" style="font-family:宋体">类，像</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Runnable</span><span lang="zh-CN" style="font-family:宋体">和</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Comparator</span><span lang="zh-CN" style="font-family:宋体">接口也是同样的使用方式。因此函数式接口都是在使用</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式中被利用到。</span></p>
+<p><span lang="en-US" style="font-family:Calibri; font-weight:bold">Lambda</span><span lang="zh-CN" style="font-family:宋体; font-weight:bold">表达式语法</span></p>
+<p><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式能够将五行代码转换到一个单独的语句从而解决匿名内部类的蓬松度问题。这个简单的解决方案解决了由内部类引起的“垂直问题”。</span></p>
+<p><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式由三个部分组成</span></p>
+<p>Argument List&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Arrow Token&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Body</p>
+<p>(int x, int y)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x &#43; y</p>
+<p><span lang="en-US" style="font-family:Calibri">Body</span><span lang="zh-CN" style="font-family:宋体">部分既可以是一个表达式也可以是语句块</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">如果是在表达式的形式</span><span lang="en-US" style="font-family:Calibri">,Body</span><span lang="zh-CN" style="font-family:宋体">部分只是被简单的计算然后返回&#20540;</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">如果是语句块的形式</span><span lang="en-US" style="font-family:Calibri">,Body</span><span lang="zh-CN" style="font-family:宋体">部分可以认为像方法体一样</span><span lang="en-US" style="font-family:Calibri">,return</span><span lang="zh-CN" style="font-family:宋体">语句将控制返回给匿名方法的调用者</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">break</span><span lang="zh-CN" style="font-family:宋体">和</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">continue</span><span lang="zh-CN" style="font-family:宋体">关键字处在顶层是非法的</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">但是允许放在循环中</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">如果</span><span lang="en-US" style="font-family:Calibri">Body</span><span lang="zh-CN" style="font-family:宋体">部分中产生结果</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">那么在每条控制路径都要返回&#20540;或者抛出异常</span><span lang="en-US" style="font-family:Calibri">.</span></p>
+<p>看下面的例子</p>
+<pre code_snippet_id="195508" snippet_file_name="blog_20140219_3_5096175" name="code" class="java">(int x, int y) -&gt; x + y
+
+() -&gt; 42
+
+(String s) -&gt; { System.out.println(s); }
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">第一个表达式带有两个整形参数</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">分别是</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">x</span><span lang="zh-CN" style="font-family:宋体">和</span><span lang="en-US" style="font-family:宋体; color:#00B0F0">y</span><span lang="zh-CN" style="font-family:宋体">然后</span><span lang="en-US" style="font-family:Calibri">Body</span><span lang="zh-CN" style="font-family:宋体">部分使用表达式形式将返回</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">x&#43;y</span><span lang="zh-CN" style="font-family:宋体">的&#20540;</span><span lang="en-US" style="font-family:Consolas">.</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">第二个表达式没有参数</span><span lang="en-US" style="font-family:Consolas">,</span><span lang="zh-CN" style="font-family:宋体">也是用表达式的形式将返回整型</span><span lang="en-US" style="font-family:Consolas">42.</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">第三个表达式带有</span><span lang="en-US" style="font-family:Calibri">String</span><span lang="zh-CN" style="font-family:宋体">参数</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">使用语句块的形式将向控制台输出这个</span><span lang="en-US" style="font-family:Calibri">String</span><span lang="zh-CN" style="font-family:宋体">&#20540;</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">没有返回&#20540;</span><span lang="en-US" style="font-family:Calibri">.</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">基本的语法都已经覆盖到了</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">下面看一些例子</span><span lang="en-US" style="font-family:Calibri">.</span></p>
+<p><span style="font-weight:bold">Lambda Example</span></p>
+<p>下面是之前介绍的例子的一些常见用例</p>
+<p><span style="font-weight:bold">Runnable Lambda</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">下面是怎么使用</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">来写</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Runnable</span></p>
+<pre code_snippet_id="195508" snippet_file_name="blog_20140219_4_3460755" name="code" class="java">public class RunnableTest {
+   public static void main(String[] args) {
+
+      System.out.println(&quot;=== RunnableTest ===&quot;);
+
+     // Anonymous Runnable
+     Runnable r1 = new Runnable(){
+
+       @Override
+       public void run(){
+         System.out.println(&quot;Hello world one!&quot;);
+       }
+     };
+
+     // Lambda Runnable
+     Runnable r2 = () -&gt; System.out.println(&quot;Hello world two!&quot;);
+
+     // Run em!
+     r1.run();
+     r2.run();
+
+   }
+ }
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">在上面的用例</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">要注意都没有传递任何参数也没有返回&#20540;</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Runnable</span><span lang="zh-CN" style="font-family:宋体">的</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式是使用语句块形式</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">能够将之前的五行代码转换成一条语句</span><span lang="en-US" style="font-family:Calibri">.</span></p>
+<p><span style="font-weight:bold">Comparator Lambda</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">在</span><span lang="en-US" style="font-family:Calibri">Java</span><span lang="zh-CN" style="font-family:宋体">中</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Comparator</span><span lang="zh-CN" style="font-family:宋体">类经常在集合的排序中使用</span><span lang="en-US" style="font-family:Consolas">.</span><span lang="zh-CN" style="font-family:宋体">下面的例子是一个由</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Person</span><span lang="zh-CN" style="font-family:宋体">构成的</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">ArrayList</span><span lang="zh-CN" style="font-family:宋体">在基于</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">surName</span><span lang="zh-CN" style="font-family:宋体">属性来排序</span><span lang="en-US" style="font-family:Consolas">.</span></p>
+<pre code_snippet_id="195508" snippet_file_name="blog_20140219_5_1268928" name="code" class="java"> public class Person {
+   private String givenName;
+   private String surName;
+   private int age;
+   private Gender gender;
+   private String eMail;
+   private String phone;
+   private String address;
+}
+</pre><span lang="zh-CN" style="font-family:宋体">下面的代码通过使用一个匿名内部类和两个</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式来运用</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Comparator</span>
+
+<pre code_snippet_id="195508" snippet_file_name="blog_20140219_6_7681660" name="code" class="java"> public class ComparatorTest {
+
+   public static void main(String[] args) {
+
+     List&lt;Person&gt; personList = Person.createShortList();
+
+     // Sort with Inner Class
+     Collections.sort(personList, new Comparator&lt;Person&gt;(){
+       public int compare(Person p1, Person p2){
+         return p1.getSurName().compareTo(p2.getSurName());
+       }
+     });
+
+     System.out.println(&quot;=== Sorted Asc SurName ===&quot;);
+     for(Person p:personList){
+       p.printName();
+     }
+
+     // Use Lambda instead
+
+     // Print Asc
+     System.out.println(&quot;=== Sorted Asc SurName ===&quot;);
+     Collections.sort(personList, (Person p1, Person p2) -&gt; p1.getSurName().compareTo(p2.getSurName()));
+
+     for(Person p:personList){
+       p.printName();
+     }
+
+     // Print Desc
+     System.out.println(&quot;=== Sorted Desc SurName ===&quot;);
+     Collections.sort(personList, (p1,  p2) -&gt; p2.getSurName().compareTo(p1.getSurName()));
+
+     for(Person p:personList){
+       p.printName();
+     }
+
+   }
+
+ }</pre>
+
+<p><span lang="en-US" style="font-family:Calibri">17-21</span><span lang="zh-CN" style="font-family:宋体">行的代码可以很容易的被</span><span lang="en-US" style="font-family:Calibri">32</span><span lang="zh-CN" style="font-family:宋体">行的</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式代替</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体">我们注意到第一个</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式声明了参数类型然后传给表达式</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">可是正如你看到的第二个表达式一样</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">这是个可选的写法</span><span lang="en-US" style="font-family:Calibri">(</span><span lang="zh-CN" style="font-family:宋体">也可以不写参数的类型</span><span lang="en-US" style="font-family:Calibri">).Lambda</span><span lang="zh-CN" style="font-family:宋体">支持</span><span lang="en-US" style="font-family:Calibri">&quot;</span><span lang="zh-CN" style="font-family:宋体">目标类型匹配</span><span lang="en-US" style="font-family:Calibri">&quot;(</span><span lang="zh-CN" style="font-family:宋体">原文叫</span><span lang="en-US" style="font-family:Calibri"></span><span lang="zh-CN" style="font-family:Calibri">target<br> typing</span><span lang="en-US" style="font-family:Calibri">)</span><span lang="zh-CN" style="font-family:宋体">它将从在上下文中被使用的对象类型中推导</span><span lang="en-US" style="font-family:Calibri">.</span><span lang="zh-CN" style="font-family:宋体"> 因为我们需要给用通用定义的</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Comparator</span><span lang="zh-CN" style="font-family:宋体">指定一个类型</span><span lang="en-US" style="font-family:Calibri">,</span><span lang="zh-CN" style="font-family:宋体">编译器可以推导出这两个参数是</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">Person</span><span lang="zh-CN" style="font-family:宋体">类型的</span><span lang="en-US" style="font-family:Consolas">.</span></p>
+<p><span style="font-weight:bold">Listener Lambda</span></p>
+<p><span lang="zh-CN" style="font-family:宋体">最后让我们再来回顾下这个</span><span lang="en-US" style="font-family:Consolas; color:#00B0F0">ActionListener</span><span lang="zh-CN" style="font-family:宋体"> 例子</span></p>
+<pre code_snippet_id="195508" snippet_file_name="blog_20140219_7_8903159" name="code" class="java"> public class ListenerTest {
+   public static void main(String[] args) {
+
+     JButton testButton = new JButton(&quot;Test Button&quot;);
+     testButton.addActionListener(new ActionListener(){
+     @Override public void actionPerformed(ActionEvent ae){
+         System.out.println(&quot;Click Detected by Anon Class&quot;);
+       }
+     });
+
+     testButton.addActionListener(e -&gt; System.out.println(&quot;Click Detected by Lambda Listner&quot;));
+
+     // Swing stuff
+     JFrame frame = new JFrame(&quot;Listener Test&quot;);
+     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+     frame.add(testButton, BorderLayout.CENTER);
+     frame.pack();
+     frame.setVisible(true);
+
+   }
+ }
+</pre>
+
+<p><span lang="zh-CN" style="font-family:宋体">注意这个</span><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表达式作为一个参数传递的</span><span lang="en-US" style="font-family:Calibri">,&quot;</span><span lang="zh-CN" style="font-family:宋体">目标类型匹配</span><span lang="en-US" style="font-family:Calibri">&quot;(Target<br> typing)</span><span lang="zh-CN" style="font-family:宋体">可以在包括下面的一些上下文中使用：</span></p>
+<ul>
+<li><span lang="zh-CN" style="font-family:宋体"></span></li>
+</ul>
+<p>变量声明</p>
+<ul>
+<li><span lang="zh-CN" style="font-family:宋体"></span></li>
+</ul>
+<p>Assignments</p>
+<ul>
+<li><span lang="zh-CN" style="font-family:宋体"></span></li>
+</ul>
+<p>返回语句</p>
+<ul>
+<li><span lang="zh-CN" style="font-family:宋体"></span></li>
+</ul>
+<p>数组初始化</p>
+<ul>
+<li><span lang="zh-CN" style="font-family:宋体"></span></li>
+</ul>
+<p>方法或者构造函数的参数</p>
+<ul>
+<li><span lang="en-US" style="font-family:Calibri">Lambda</span><span lang="zh-CN" style="font-family:宋体">表示体</span></li>
+<li><span lang="zh-CN" style="font-family:宋体"></span></li>
+</ul>
+<p><span lang="zh-CN" style="font-family:宋体">条件表达式</span><span lang="en-US" style="font-family:Calibri"> ?:</span></p>
+<ul>
+<li><span lang="zh-CN" style="font-family:宋体"></span></li>
+</ul>
+<p>Cast expressions</p>
+<p>源码</p>
+<p>&nbsp;<a href="http://www.oracle.com/webfolder/technetwork/tutorials/obe/java/Lambda-QuickStart/examples/LambdaExamples01.zip" target="_blank" rel="external">点击打开链接</a></p>
+<p><span style="color:#FF0000">未完，待续。。。。</span></p>
+<pre><code><span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+<span class="code">    作者：qarkly112649 发表于2014/2/19 22:43:51 [原文链接](http://blog.csdn.net/qarkly112649/article/details/19506343)</span>
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+<span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+阅读：557 评论：5 [<span class="link_label">查看评论</span>](<span class="link_url">http://blog.csdn.net/qarkly112649/article/details/19506343#comments</span>)
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+</code></pre>
+      
+    </div>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/02/25/译-JavaSE-8-Lambda-快速学习（二）/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption"><</strong>
+      <div class="article-nav-title">
+        
+          [译]JavaSE 8 :Lambda 快速学习（二）
+        
+      </div>
+    </a>
+  
+  
+</nav>
+
+  
+</article>
+
+
+<div class="share">
+	<!-- JiaThis Button BEGIN -->
+	<div class="jiathis_style">
+		<span class="jiathis_txt">分享到：</span>
+		<a class="jiathis_button_tsina"></a>
+		<a class="jiathis_button_cqq"></a>
+		<a class="jiathis_button_douban"></a>
+		<a class="jiathis_button_weixin"></a>
+		<a class="jiathis_button_tumblr"></a>
+		<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+	</div>
+	<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=1405949716054953" charset="utf-8"></script>
+	<!-- JiaThis Button END -->
+</div>
+
+
+
+<div class="duoshuo">
+	<!-- 多说评论框 start -->
+	<div class="ds-thread" data-thread-key="译-JavaSE-8-Lambda-快速学习（一）" data-title="[译]JavaSE 8 :Lambda 快速学习（一）" data-url="http://qarkly@github.com/2014/02/19/译-JavaSE-8-Lambda-快速学习（一）/"></div>
+	<!-- 多说评论框 end -->
+	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+	<script type="text/javascript">
+	var duoshuoQuery = {short_name:"true"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		 || document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+	<!-- 多说公共JS代码 end -->
+</div>
+
+
+
+
+</div>
+      <footer id="footer">
+  <div class="outer">
+    <div id="footer-info">
+    	<div class="footer-left">
+    		&copy; 2015 qarkly
+    	</div>
+      	<div class="footer-right">
+      		<a href="http://hexo.io/" target="_blank">Hexo</a>  Theme <a href="https://github.com/litten/hexo-theme-yilia" target="_blank">Yilia</a> by Litten
+      	</div>
+    </div>
+  </div>
+</footer>
+    </div>
+    
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css" type="text/css">
+
+
+<script>
+	var yiliaConfig = {
+		fancybox: true,
+		mathjax: true,
+		animate: true,
+		isHome: false,
+		isPost: true,
+		isArchive: false,
+		isTag: false,
+		isCategory: false,
+		open_in_new: false
+	}
+</script>
+<script src="http://7.url.cn/edu/jslib/comb/require-2.1.6,jquery-1.9.1.min.js" type="text/javascript"></script>
+<script src="/js/main.js" type="text/javascript"></script>
+
+
+
+
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+    tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+        processEscapes: true,
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    }
+});
+
+MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';                 
+    }       
+});
+</script>
+
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+  </div>
+</body>
+</html>

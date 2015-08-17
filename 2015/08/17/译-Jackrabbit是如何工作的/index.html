@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>[译]Jackrabbit是如何工作的 | qarkly的博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="下面的图片解释了当一个用户使用JCR API修改内容仓库时，哪些Jackrabbit的部件会被使用到。这是一个简单而且常用的操作，但会涉及到Jackrabbit的大部分组件。请注意这些实现的架构JCR并没有授权，但是是直接基于JCR设计的
+
+下面是写或修改内容仓库时依次使用到的组件和它们各自的功能
+
+Transient Item State Manager 暂时项状态管理器一旦内容项被会话（ses">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[译]Jackrabbit是如何工作的">
+<meta property="og:url" content="http://qarkly@github.com/2015/08/17/译-Jackrabbit是如何工作的/index.html">
+<meta property="og:site_name" content="qarkly的博客">
+<meta property="og:description" content="下面的图片解释了当一个用户使用JCR API修改内容仓库时，哪些Jackrabbit的部件会被使用到。这是一个简单而且常用的操作，但会涉及到Jackrabbit的大部分组件。请注意这些实现的架构JCR并没有授权，但是是直接基于JCR设计的
+
+下面是写或修改内容仓库时依次使用到的组件和它们各自的功能
+
+Transient Item State Manager 暂时项状态管理器一旦内容项被会话（ses">
+<meta property="og:image" content="https://cloud.githubusercontent.com/assets/6206101/9248498/d3dacb6e-41ee-11e5-8639-c3b0644f6bb5.png">
+<meta property="og:updated_time" content="2015-08-17T15:08:38.330Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="[译]Jackrabbit是如何工作的">
+<meta name="twitter:description" content="下面的图片解释了当一个用户使用JCR API修改内容仓库时，哪些Jackrabbit的部件会被使用到。这是一个简单而且常用的操作，但会涉及到Jackrabbit的大部分组件。请注意这些实现的架构JCR并没有授权，但是是直接基于JCR设计的
+
+下面是写或修改内容仓库时依次使用到的组件和它们各自的功能
+
+Transient Item State Manager 暂时项状态管理器一旦内容项被会话（ses">
+  
+    <link rel="alternative" href="/atom.xml" title="qarkly的博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link rel="stylesheet" href="/css/style.css" type="text/css">
+</head>
+<body>
+  <div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+	<header id="header" class="inner">
+		<a href="/" class="profilepic">
+			
+			<img lazy-src="/selfi.png" class="js-avatar">
+			
+		</a>
+
+		<hgroup>
+		  <h1 class="header-author"><a href="/">qarkly</a></h1>
+		</hgroup>
+
+		
+		<p class="header-subtitle">个人技术博客</p>
+		
+
+		
+			<div class="switch-btn">
+				<div class="icon">
+					<div class="icon-ctn">
+						<div class="icon-wrap icon-house" data-idx="0">
+							<div class="birdhouse"></div>
+							<div class="birdhouse_holes"></div>
+						</div>
+						<div class="icon-wrap icon-ribbon hide" data-idx="1">
+							<div class="ribbon"></div>
+						</div>
+						
+						<div class="icon-wrap icon-link hide" data-idx="2">
+							<div class="loopback_l"></div>
+							<div class="loopback_r"></div>
+						</div>
+						
+						
+						<div class="icon-wrap icon-me hide" data-idx="3">
+							<div class="user"></div>
+							<div class="shoulder"></div>
+						</div>
+						
+					</div>
+					
+				</div>
+				<div class="tips-box hide">
+					<div class="tips-arrow"></div>
+					<ul class="tips-inner">
+						<li>菜单</li>
+						<li>标签</li>
+						
+						<li>友情链接</li>
+						
+						
+						<li>关于我</li>
+						
+					</ul>
+				</div>
+			</div>
+		
+
+		<div class="switch-area">
+			<div class="switch-wrap">
+				<section class="switch-part switch-part1">
+					<nav class="header-menu">
+						<ul>
+						
+							<li><a href="/">主页</a></li>
+				        
+							<li><a href="/archives">所有文章</a></li>
+				        
+							<li><a href="/tags/随笔">随笔</a></li>
+				        
+						</ul>
+					</nav>
+					<nav class="header-nav">
+						<div class="social">
+							
+								<a class="github" target="_blank" href="https://github.com/qarkly" title="github">github</a>
+					        
+								<a class="weibo" target="_blank" href="http://weibo.com/qarkly" title="weibo">weibo</a>
+					        
+								<a class="rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+					        
+						</div>
+					</nav>
+				</section>
+				
+				
+				<section class="switch-part switch-part2">
+					<div class="widget tagcloud" id="js-tagcloud">
+						<a href="/tags/Jackrabbit/" style="font-size: 10px;">Jackrabbit</a> <a href="/tags/Lambda/" style="font-size: 20px;">Lambda</a> <a href="/tags/java/" style="font-size: 20px;">java</a> <a href="/tags/java8/" style="font-size: 20px;">java8</a> <a href="/tags/mina/" style="font-size: 10px;">mina</a> <a href="/tags/内容仓库/" style="font-size: 10px;">内容仓库</a> <a href="/tags/生活/" style="font-size: 10px;">生活</a> <a href="/tags/算法/" style="font-size: 15px;">算法</a> <a href="/tags/系统知识/" style="font-size: 10px;">系统知识</a> <a href="/tags/设计模式/" style="font-size: 15px;">设计模式</a> <a href="/tags/责任链/" style="font-size: 10px;">责任链</a> <a href="/tags/责任链模式/" style="font-size: 10px;">责任链模式</a> <a href="/tags/随笔/" style="font-size: 10px;">随笔</a>
+					</div>
+				</section>
+				
+				
+				
+				<section class="switch-part switch-part3">
+					<div id="js-friends">
+					
+			          <a target="_blank" class="main-nav-link switch-friends-link" href="http://blog.csdn.net/qarkly112649">csdn的博客</a>
+			        
+			        </div>
+				</section>
+				
+
+				
+				
+				<section class="switch-part switch-part4">
+				
+					<div id="js-aboutme">南京邮电大学09级,就职于华为从事web相关工作…</div>
+				</section>
+				
+			</div>
+		</div>
+	</header>				
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+  	<div class="overlay">
+  		<div class="slider-trigger"></div>
+  		<h1 class="header-author js-mobile-header hide">qarkly</h1>
+  	</div>
+	<div class="intrude-less">
+		<header id="header" class="inner">
+			<div class="profilepic">
+				<img lazy-src="/selfi.png" class="js-avatar">
+			</div>
+			<hgroup>
+			  <h1 class="header-author">qarkly</h1>
+			</hgroup>
+			
+			<p class="header-subtitle">个人技术博客</p>
+			
+			<nav class="header-menu">
+				<ul>
+				
+					<li><a href="/">主页</a></li>
+		        
+					<li><a href="/archives">所有文章</a></li>
+		        
+					<li><a href="/tags/随笔">随笔</a></li>
+		        
+		        <div class="clearfix"></div>
+				</ul>
+			</nav>
+			<nav class="header-nav">
+				<div class="social">
+					
+						<a class="github" target="_blank" href="https://github.com/qarkly" title="github">github</a>
+			        
+						<a class="weibo" target="_blank" href="http://weibo.com/qarkly" title="weibo">weibo</a>
+			        
+						<a class="rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+			        
+				</div>
+			</nav>
+		</header>				
+	</div>
+</nav>
+      <div class="body-wrap"><article id="post-译-Jackrabbit是如何工作的" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2015/08/17/译-Jackrabbit是如何工作的/" class="article-date">
+  	<time datetime="2015-08-17T14:41:48.000Z" itemprop="datePublished">2015-08-17</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      [译]Jackrabbit是如何工作的
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+	<div class="article-tag tagcloud">
+		<ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Jackrabbit/">Jackrabbit</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/内容仓库/">内容仓库</a></li></ul>
+	</div>
+
+        
+
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>下面的图片解释了当一个用户使用JCR API修改内容仓库时，哪些Jackrabbit的部件会被使用到。这是一个简单而且常用的操作，但会涉及到Jackrabbit的大部分组件。请注意这些实现的架构JCR并没有授权，但是是直接基于JCR设计的</p>
+<p><img src="https://cloud.githubusercontent.com/assets/6206101/9248498/d3dacb6e-41ee-11e5-8639-c3b0644f6bb5.png" alt="image"></p>
+<p>下面是写或修改内容仓库时依次使用到的组件和它们各自的功能</p>
+<ul>
+<li><p>Transient Item State Manager 暂时项状态管理器<br>一旦内容项被会话（session）读取，它们就会被Transient ISM缓存。当这些内容项被修改，在这个所谓的“暂时”空间里这些修改只对同一个session是可见的。</p>
+</li>
+<li><p>Transactional Item State Manager 事务项状态管理器<br>当应用使用JCR的Item.save() 或Session.save() 对这些修改项持久化时。这些暂时项被会提升到Transactional ISM。这些修改仍然只在这事务中是可见的，这意味直到被提交前它们对其他session依然是不可见的。如果内容仓库不是运行在XA环境下，这些提交是隐形的。</p>
+</li>
+<li><p>Shared Item State Manager 共享项状态管理器<br>一旦事务被提交，Shared ISM会接受到更新日志并把这些更新推送到所有登录到这一工作空间的session。这就意味被其他session缓存和引用到的所有项状态都被会通知，也可能会被更新或者变得无效。Shared ISM 也会触发观察机制并将更新日志传递给这个工作空间配置的持久化管理器。</p>
+</li>
+<li><p>Persistence Manager 持久化管理器<br>Persistence Manager会将Shared ISM传递过来的更新日志中的所有项进行持久化操作。持久化管理器简单、快速，事务接口是低层次的不需要理解复杂的仓库操作，只需在底层上根据给定项的ID能够持久化和恢复</p>
+</li>
+<li><p>Observation 观察机制<br>当事务被提交，Shared ISM会出发观察机制。这样允许应用在工作空间内异步订阅这些改变。Jackrabbit也提供了同步的观察机制，但这不属于JCR标准之内</p>
+</li>
+<li><p>Query Manager/Index 查询管理/索引<br>通过异步观察事件，指示Query Manager索引到新添加项或修改项。内容仓库索引要比经典的关系型数据库索引要复杂的多，因为它要处理内容仓库的特性，比如项的层级，节点继承还有全文检索</p>
+</li>
+</ul>
+
+      
+    </div>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2015/08/17/译-Jackrabbit并发控制/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title"></div>
+      <strong class="article-nav-caption">></strong>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<div class="share">
+	<!-- JiaThis Button BEGIN -->
+	<div class="jiathis_style">
+		<span class="jiathis_txt">分享到：</span>
+		<a class="jiathis_button_tsina"></a>
+		<a class="jiathis_button_cqq"></a>
+		<a class="jiathis_button_douban"></a>
+		<a class="jiathis_button_weixin"></a>
+		<a class="jiathis_button_tumblr"></a>
+		<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+	</div>
+	<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=1405949716054953" charset="utf-8"></script>
+	<!-- JiaThis Button END -->
+</div>
+
+
+
+<div class="duoshuo">
+	<!-- 多说评论框 start -->
+	<div class="ds-thread" data-thread-key="译-Jackrabbit是如何工作的" data-title="[译]Jackrabbit是如何工作的" data-url="http://qarkly@github.com/2015/08/17/译-Jackrabbit是如何工作的/"></div>
+	<!-- 多说评论框 end -->
+	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+	<script type="text/javascript">
+	var duoshuoQuery = {short_name:"true"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		 || document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+	<!-- 多说公共JS代码 end -->
+</div>
+
+
+
+
+</div>
+      <footer id="footer">
+  <div class="outer">
+    <div id="footer-info">
+    	<div class="footer-left">
+    		&copy; 2015 qarkly
+    	</div>
+      	<div class="footer-right">
+      		<a href="http://hexo.io/" target="_blank">Hexo</a>  Theme <a href="https://github.com/litten/hexo-theme-yilia" target="_blank">Yilia</a> by Litten
+      	</div>
+    </div>
+  </div>
+</footer>
+    </div>
+    
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css" type="text/css">
+
+
+<script>
+	var yiliaConfig = {
+		fancybox: true,
+		mathjax: true,
+		animate: true,
+		isHome: false,
+		isPost: true,
+		isArchive: false,
+		isTag: false,
+		isCategory: false,
+		open_in_new: false
+	}
+</script>
+<script src="http://7.url.cn/edu/jslib/comb/require-2.1.6,jquery-1.9.1.min.js" type="text/javascript"></script>
+<script src="/js/main.js" type="text/javascript"></script>
+
+
+
+
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+    tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+        processEscapes: true,
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    }
+});
+
+MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';                 
+    }       
+});
+</script>
+
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+  </div>
+</body>
+</html>

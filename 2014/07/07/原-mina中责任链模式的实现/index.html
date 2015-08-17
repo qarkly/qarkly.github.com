@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>[原]mina中责任链模式的实现 | qarkly的博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="1.责任链模式在mina中有重要的作用，其中Filter机制就是基于责任链实现的，再来回顾mina框架组成从上图看到消息的接受从IoService层先经过Filter层过滤处理后最后交给IoHander，消息的发送则是反过来从IoHander层经过Filter层再到IoService层。我们来想想这样做的好处:第一点就是可以把消息从原始字节封装成对象方便处理，或者从对象到原始字节，那这就是deco">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[原]mina中责任链模式的实现">
+<meta property="og:url" content="http://qarkly@github.com/2014/07/07/原-mina中责任链模式的实现/index.html">
+<meta property="og:site_name" content="qarkly的博客">
+<meta property="og:description" content="1.责任链模式在mina中有重要的作用，其中Filter机制就是基于责任链实现的，再来回顾mina框架组成从上图看到消息的接受从IoService层先经过Filter层过滤处理后最后交给IoHander，消息的发送则是反过来从IoHander层经过Filter层再到IoService层。我们来想想这样做的好处:第一点就是可以把消息从原始字节封装成对象方便处理，或者从对象到原始字节，那这就是deco">
+<meta property="og:image" content="http://img.blog.csdn.net/20140707093415046?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcWFya2x5MTEyNjQ5/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast">
+<meta property="og:image" content="http://img.blog.csdn.net/20140707094005250?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcWFya2x5MTEyNjQ5/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast">
+<meta property="og:image" content="http://img.blog.csdn.net/20140707094718437?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcWFya2x5MTEyNjQ5/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast">
+<meta property="og:updated_time" content="2015-08-15T10:04:22.680Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="[原]mina中责任链模式的实现">
+<meta name="twitter:description" content="1.责任链模式在mina中有重要的作用，其中Filter机制就是基于责任链实现的，再来回顾mina框架组成从上图看到消息的接受从IoService层先经过Filter层过滤处理后最后交给IoHander，消息的发送则是反过来从IoHander层经过Filter层再到IoService层。我们来想想这样做的好处:第一点就是可以把消息从原始字节封装成对象方便处理，或者从对象到原始字节，那这就是deco">
+  
+    <link rel="alternative" href="/atom.xml" title="qarkly的博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link rel="stylesheet" href="/css/style.css" type="text/css">
+</head>
+<body>
+  <div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+	<header id="header" class="inner">
+		<a href="/" class="profilepic">
+			
+			<img lazy-src="/selfi.png" class="js-avatar">
+			
+		</a>
+
+		<hgroup>
+		  <h1 class="header-author"><a href="/">qarkly</a></h1>
+		</hgroup>
+
+		
+		<p class="header-subtitle">个人技术博客</p>
+		
+
+		
+			<div class="switch-btn">
+				<div class="icon">
+					<div class="icon-ctn">
+						<div class="icon-wrap icon-house" data-idx="0">
+							<div class="birdhouse"></div>
+							<div class="birdhouse_holes"></div>
+						</div>
+						<div class="icon-wrap icon-ribbon hide" data-idx="1">
+							<div class="ribbon"></div>
+						</div>
+						
+						<div class="icon-wrap icon-link hide" data-idx="2">
+							<div class="loopback_l"></div>
+							<div class="loopback_r"></div>
+						</div>
+						
+						
+						<div class="icon-wrap icon-me hide" data-idx="3">
+							<div class="user"></div>
+							<div class="shoulder"></div>
+						</div>
+						
+					</div>
+					
+				</div>
+				<div class="tips-box hide">
+					<div class="tips-arrow"></div>
+					<ul class="tips-inner">
+						<li>菜单</li>
+						<li>标签</li>
+						
+						<li>友情链接</li>
+						
+						
+						<li>关于我</li>
+						
+					</ul>
+				</div>
+			</div>
+		
+
+		<div class="switch-area">
+			<div class="switch-wrap">
+				<section class="switch-part switch-part1">
+					<nav class="header-menu">
+						<ul>
+						
+							<li><a href="/">主页</a></li>
+				        
+							<li><a href="/archives">所有文章</a></li>
+				        
+							<li><a href="/tags/随笔">随笔</a></li>
+				        
+						</ul>
+					</nav>
+					<nav class="header-nav">
+						<div class="social">
+							
+								<a class="github" target="_blank" href="https://github.com/qarkly" title="github">github</a>
+					        
+								<a class="weibo" target="_blank" href="http://weibo.com/qarkly" title="weibo">weibo</a>
+					        
+								<a class="rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+					        
+						</div>
+					</nav>
+				</section>
+				
+				
+				<section class="switch-part switch-part2">
+					<div class="widget tagcloud" id="js-tagcloud">
+						<a href="/tags/Jackrabbit/" style="font-size: 10px;">Jackrabbit</a> <a href="/tags/Lambda/" style="font-size: 20px;">Lambda</a> <a href="/tags/java/" style="font-size: 20px;">java</a> <a href="/tags/java8/" style="font-size: 20px;">java8</a> <a href="/tags/mina/" style="font-size: 10px;">mina</a> <a href="/tags/内容仓库/" style="font-size: 10px;">内容仓库</a> <a href="/tags/生活/" style="font-size: 10px;">生活</a> <a href="/tags/算法/" style="font-size: 15px;">算法</a> <a href="/tags/系统知识/" style="font-size: 10px;">系统知识</a> <a href="/tags/设计模式/" style="font-size: 15px;">设计模式</a> <a href="/tags/责任链/" style="font-size: 10px;">责任链</a> <a href="/tags/责任链模式/" style="font-size: 10px;">责任链模式</a> <a href="/tags/随笔/" style="font-size: 10px;">随笔</a>
+					</div>
+				</section>
+				
+				
+				
+				<section class="switch-part switch-part3">
+					<div id="js-friends">
+					
+			          <a target="_blank" class="main-nav-link switch-friends-link" href="http://blog.csdn.net/qarkly112649">csdn的博客</a>
+			        
+			        </div>
+				</section>
+				
+
+				
+				
+				<section class="switch-part switch-part4">
+				
+					<div id="js-aboutme">南京邮电大学09级,就职于华为从事web相关工作…</div>
+				</section>
+				
+			</div>
+		</div>
+	</header>				
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+  	<div class="overlay">
+  		<div class="slider-trigger"></div>
+  		<h1 class="header-author js-mobile-header hide">qarkly</h1>
+  	</div>
+	<div class="intrude-less">
+		<header id="header" class="inner">
+			<div class="profilepic">
+				<img lazy-src="/selfi.png" class="js-avatar">
+			</div>
+			<hgroup>
+			  <h1 class="header-author">qarkly</h1>
+			</hgroup>
+			
+			<p class="header-subtitle">个人技术博客</p>
+			
+			<nav class="header-menu">
+				<ul>
+				
+					<li><a href="/">主页</a></li>
+		        
+					<li><a href="/archives">所有文章</a></li>
+		        
+					<li><a href="/tags/随笔">随笔</a></li>
+		        
+		        <div class="clearfix"></div>
+				</ul>
+			</nav>
+			<nav class="header-nav">
+				<div class="social">
+					
+						<a class="github" target="_blank" href="https://github.com/qarkly" title="github">github</a>
+			        
+						<a class="weibo" target="_blank" href="http://weibo.com/qarkly" title="weibo">weibo</a>
+			        
+						<a class="rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+			        
+				</div>
+			</nav>
+		</header>				
+	</div>
+</nav>
+      <div class="body-wrap"><article id="post-原-mina中责任链模式的实现" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2014/07/07/原-mina中责任链模式的实现/" class="article-date">
+  	<time datetime="2014-07-07T01:52:26.000Z" itemprop="datePublished">2014-07-07</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      [原]mina中责任链模式的实现
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+	<div class="article-tag tagcloud">
+		<ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/java/">java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/mina/">mina</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/设计模式/">设计模式</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/责任链/">责任链</a></li></ul>
+	</div>
+
+        
+
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <div><br><br><span style="">1.责任链模式在mina中有重要的作用，其中Filter机制就是基于责任链实现的，再来回顾mina框架组成</span><br><br><span style=""><img src="http://img.blog.csdn.net/20140707093415046?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcWFya2x5MTEyNjQ5/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt=""></span><br><br><span style=""></span><br><br><div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">从上图看到消息的接受从IoService层先经过Filter层过滤处理后最后交给IoHander，消息的发送则是反过来从IoHander层经过Filter层再到IoService层。</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">我们来想想这样做的好处:</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">第一点就是可以把消息从原始字节封装成对象方便处理，或者从对象到原始字节，那这就是decode和encode过程</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">第二点过滤消息，业务层只需要处理感兴趣的消息</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">当然还有其他…</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">再来想想Filter层是怎么实现的呢</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">从图中看到接收消息和发送消息经过Filter层是相反处理的，那么每个Filter就必须知道前一个和后一个Filter，我们就很容易想到了双向链表结构。</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">没错Filter层就是用双向链表实现的，那么让我们来看看Filter层具体是如何实现，即mina中责任链模式的实现<br><br></span><br><div><span style="">2.先来看下mina的filterchain包结构</span></div><br><img src="http://img.blog.csdn.net/20140707094005250?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcWFya2x5MTEyNjQ5/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt=""><br><br><div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">Filter层的每个filter都是对上图IoFilter接口的实现，我们将具体讲解IoFilter，IoFilterChain，DefaultIoFilterChain这几个类</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">IoFilterChainBuilder接口和DefaultIoFilterChainBuilder实现不再细讲，从字面意思就是IoFilterChain的建造者</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">IoFilterEvent是代表filter事件，IoFilterLifeCycleException是指filter中出现循环链表异常</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">下面的图是我们要重点讲解的几个类的关系</span></div><br></div><br><img src="http://img.blog.csdn.net/20140707094718437?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcWFya2x5MTEyNjQ5/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt=""><br><br><div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">我们重点讲解的只有四个类，为什么会出现这么多的类呢，有些类使内部实现，不太好表示就都画出来了，先来说明下</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">IoFilter接口：NextFilter接口是其内部接口</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">IoFilterAdapter类：对IoFilter接口的实现，是所有Filter的基类</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">IoFilterChain接口：Entry接口是其内部接口</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">DefaultIoFilterChain类：是对IoFilterChain接口的实现，有EntryImpl，HeadFilter，TailFilter三个内部类，其中EntryImpl类中又有NextFilter接口的内部实现</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">还需要说明下：IoFilter还有相关接口就写了两个方法，一个接受消息触发的方法还有一个是发送消息触发的方法，剩下的都是这两类消息处理方法就不表示了</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">HeadFilter类只对发送消息处理方法重载，TailFilter类只对接受消息处理方法重载，想一想为什么？再想想为什么用内部类来实现？</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">从上图看到EntryImp类是重点，我们就来看看EntryImpl类的实现</span></div><br></div><br><pre code_snippet_id="419654" snippet_file_name="blog_20140707_1_2592031" name="code" class="java">private class EntryImpl implements Entry {<br>        private EntryImpl prevEntry ;<br><br>        private EntryImpl nextEntry ;<br><br>        private final String name;<br><br>        private IoFilter filter ;<br><br>        private final NextFilter nextFilter;<br><br>        private EntryImpl(EntryImpl prevEntry, EntryImpl nextEntry, String name, IoFilter filter) {<br>            if (filter == null) {<br>                throw new IllegalArgumentException(&quot;filter&quot;);<br>            }<br>            if (name == null) {<br>                throw new IllegalArgumentException(&quot;name&quot;);<br>            }<br><br>            this.prevEntry = prevEntry;<br>            this.nextEntry = nextEntry;<br>            this.name = name;<br>            this.filter = filter;<br>            this.nextFilter = new NextFilter() {<br><br>                public void sessionOpened(IoSession session) {<br>                    Entry nextEntry = EntryImpl. this.nextEntry ;<br>                    callNextSessionOpened(nextEntry, session);<br>                }<br><br>                public void filterWrite(IoSession session, WriteRequest writeRequest) {<br>                    Entry nextEntry = EntryImpl. this.prevEntry ;<br>                    callPreviousFilterWrite(nextEntry, session, writeRequest);<br>                }<br><br>            };<br>        }<br></pre><br><div><br><div style=""><br><div><span style="font-family:YaHei Consolas Hybrid">从EntryImpl类的构造方法看到，EntryImpl中保持对上一个节点和下一个节点引用，双向链表结构，name即过滤层名称，filter即过滤层的具体实现，而nextFilter是在构造方法中的内部实现。</span></div><br></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">我们再来看看DefaultIoFilterChain的实现</span></div><br></div><br><pre code_snippet_id="419654" snippet_file_name="blog_20140707_2_3573549" name="code" class="java">public class DefaultIoFilterChain implements IoFilterChain {<br> /<strong> The associated session */<br>    private final AbstractIoSession session ;<br><br>    private final Map&lt;String, Entry&gt; name2entry = new ConcurrentHashMap&lt;String, Entry&gt;();<br><br>    /</strong> The chain head <em>/<br>    private final EntryImpl head ;<br><br>    /** The chain tail </em>/<br>    private final EntryImpl tail ;<br><br>    public DefaultIoFilterChain(AbstractIoSession session) {<br>        if (session == null) {<br>            throw new IllegalArgumentException(&quot;session&quot;);<br>        }<br><br>        this.session = session;<br>        head = new EntryImpl(null, null, &quot;head&quot; , new HeadFilter ());<br>        tail = new EntryImpl(head, null, &quot;tail&quot;, new TailFilter());<br>        head.nextEntry = tail;<br>    }<br></pre><br><div><br><div style=""><br><div><span style="font-family:YaHei Consolas Hybrid">从上图看到，head顾名思义就是头节点，tail即尾节点，两个节点在构造方法中已经构造好了，head里装的是HeadFilter，tail中即TailFilter。上面我们说到HeadFilter只实现发送消息处理方法，TailFilter只实现接受消息处理方法。</span></div><br></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">想一想便得知，HeadFilter是发送消息最后的处理节点，TailFilter是接受消息最后的处理节点。最后的节点处理就是将写消息交给Io线程处理，将读消息交给IoHander的业务层处理。所以说HeadFilter和TailFilter只需对某一方消息处理，反面消息默认交给下一个节点处理。</span></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid">HeadFilter</span></div><br></div><br><pre code_snippet_id="419654" snippet_file_name="blog_20140707_3_5351456" name="code" class="java"> private class HeadFilter extends IoFilterAdapter {<br>        @SuppressWarnings(&quot;unchecked&quot; )<br>        @Override<br>        public void filterWrite(NextFilter nextFilter, IoSession session, WriteRequest writeRequest) throws Exception {<br><br>            AbstractIoSession s = (AbstractIoSession) session;<br><br>            // Maintain counters.<br>            if (writeRequest.getMessage() instanceof IoBuffer) {<br>                IoBuffer buffer = (IoBuffer) writeRequest.getMessage();<br>                // I/O processor implementation will call buffer.reset()<br>                // it after the write operation is finished, because<br>                // the buffer will be specified with messageSent event.<br>                buffer.mark();<br>                int remaining = buffer.remaining();<br><br>                if (remaining == 0) {<br>                    // Zero-sized buffer means the internal message<br>                    // delimiter.<br>                    s.increaseScheduledWriteMessages();<br>                } else {<br>                  s.increaseScheduledWriteBytes(remaining);<br>                }<br>            } else {<br>                s.increaseScheduledWriteMessages();<br>            }<br><br>            WriteRequestQueue writeRequestQueue = s.getWriteRequestQueue();<br><br>            if (!s.isWriteSuspended()) {<br>                if (writeRequestQueue.size() == 0) {<br>                    // We can write directly the message<br>                    s.getProcessor().write(s, writeRequest);<br>                } else {<br>                    s.getWriteRequestQueue().offer(s, writeRequest);<br>                    s.getProcessor().flush(s);<br>                }<br>            } else {<br>                s.getWriteRequestQueue().offer(s, writeRequest);<br>            }<br>        }<br>}<br></pre><br><br><div><span style="">TailFilter</span></div><br><pre code_snippet_id="419654" snippet_file_name="blog_20140707_4_9081210" name="code" class="java"> private static class TailFilter extends IoFilterAdapter {<br>@Override<br>        public void sessionOpened(NextFilter nextFilter, IoSession session) throws Exception {<br>            session.getHandler().sessionOpened(session);<br>        }<br>}<br></pre><br><br><div><span style="">下面我们来看看sessionOpen消息处理的完整过程，首先是IoFilterChain收到这个消息触发</span><span style="">fireSessionOpened方法</span></div><br><pre code_snippet_id="419654" snippet_file_name="blog_20140707_5_1174762" name="code" class="java">  public void fireSessionOpened() {<br>        Entry head = this.head ;<br>        callNextSessionOpened(head, session);<br>    }<br><br>    private void callNextSessionOpened(Entry entry, IoSession session) {<br>        try {<br>            IoFilter filter = entry.getFilter();<br>            NextFilter nextFilter = entry.getNextFilter();<br>            filter.sessionOpened(nextFilter, session);<br>        } catch (Throwable e) {<br>            fireExceptionCaught(e);<br>        }<br>    }<br></pre><br><br><div><br><div style=""><br><div><span style="font-family:YaHei Consolas Hybrid"><span style="background-color:rgb(212,212,212)">fireSessionOpened方法获取当前的头节点，然后调用</span><span style="">callNextSessionOpened方法，而</span><span style="">callNextSessionOpened方法是从entry中获取filter和nextfitler，触发filter的</span><span style="">sessionOpened方法，同时将nextfilter作为参数传进去，而filter层如果对这个消息感兴趣可以处理完成后调用nextfilter的</span><span style="">sessionOpened方法，不感兴趣的话，可能消息到此就结束了。</span></span></div><br></div><br><div style=""><span style="font-family:YaHei Consolas Hybrid"><span style="">再回到上面EntryImpl中对NextFilter的实现，我们看到NextFilter收到sessionOpen消息，获取当前节点的下一个节点，然后触发IoFilterChain的</span><span style="">callNextSessionOpened方法，即上图所示。再然后就是传递到下一节点处理，要么filter层拦截过滤结束，要不就是传到最后一层由TailFilter交给业务层处理。而写消息恰好相反，nextFilter是获取前一个节点，这就实现了双向过滤的功能。</span></span></div><br><div style=""><span style=""><span style="font-family:YaHei Consolas Hybrid">到这我们就明白了为什么EntryImpl还有NextFilter选择内部类实现了。</span></span></div><br><div style=""><span style=""><span style="font-family:YaHei Consolas Hybrid">NextFilter其实是起到中转站的作用，收到Reveceive消息转交给后一节点，收到Send消息转交给前一个消息。那我们再来想想为什么要用NextFilter来作为中转呢？我想应该是接口隔离的原则。Filter只需要关心如何处理接受到的消息，至于如何转交到下一个Filter不应该由他实现。</span></span></div><br><div style=""><span style=""><span style="font-family:YaHei Consolas Hybrid">至此Mina的责任链实现就已经讲完了，其余细节的东西由读者自己体会吧，在此思考下</span></span></div><br><div style=""><span style=""><span style="font-family:YaHei Consolas Hybrid">IoFilterChain是如何检测链表中是否有环呢？</span></span></div><br></div>
+
+<p></p></div><br></div><p></p>
+<p></p></div><p></p>
+<pre><code><span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+<span class="code">    作者：qarkly112649 发表于2014/7/7 9:52:26 [原文链接](http://blog.csdn.net/qarkly112649/article/details/37498251)</span>
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+<span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span></span>
+阅读：631 评论：0 [<span class="link_label">查看评论</span>](<span class="link_url">http://blog.csdn.net/qarkly112649/article/details/37498251#comments</span>)
+<span class="xml"><span class="tag">&lt;/<span class="title">div</span>&gt;</span></span>
+</code></pre>
+      
+    </div>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2014/07/07/原-windows和Linux查看端口/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption"><</strong>
+      <div class="article-nav-title">
+        
+          [原]windows和Linux查看端口
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2014/06/29/原-快排的java两种实现方式/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">[原]快排的java两种实现方式</div>
+      <strong class="article-nav-caption">></strong>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<div class="share">
+	<!-- JiaThis Button BEGIN -->
+	<div class="jiathis_style">
+		<span class="jiathis_txt">分享到：</span>
+		<a class="jiathis_button_tsina"></a>
+		<a class="jiathis_button_cqq"></a>
+		<a class="jiathis_button_douban"></a>
+		<a class="jiathis_button_weixin"></a>
+		<a class="jiathis_button_tumblr"></a>
+		<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+	</div>
+	<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=1405949716054953" charset="utf-8"></script>
+	<!-- JiaThis Button END -->
+</div>
+
+
+
+<div class="duoshuo">
+	<!-- 多说评论框 start -->
+	<div class="ds-thread" data-thread-key="原-mina中责任链模式的实现" data-title="[原]mina中责任链模式的实现" data-url="http://qarkly@github.com/2014/07/07/原-mina中责任链模式的实现/"></div>
+	<!-- 多说评论框 end -->
+	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+	<script type="text/javascript">
+	var duoshuoQuery = {short_name:"true"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		 || document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+	<!-- 多说公共JS代码 end -->
+</div>
+
+
+
+
+</div>
+      <footer id="footer">
+  <div class="outer">
+    <div id="footer-info">
+    	<div class="footer-left">
+    		&copy; 2015 qarkly
+    	</div>
+      	<div class="footer-right">
+      		<a href="http://hexo.io/" target="_blank">Hexo</a>  Theme <a href="https://github.com/litten/hexo-theme-yilia" target="_blank">Yilia</a> by Litten
+      	</div>
+    </div>
+  </div>
+</footer>
+    </div>
+    
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css" type="text/css">
+
+
+<script>
+	var yiliaConfig = {
+		fancybox: true,
+		mathjax: true,
+		animate: true,
+		isHome: false,
+		isPost: true,
+		isArchive: false,
+		isTag: false,
+		isCategory: false,
+		open_in_new: false
+	}
+</script>
+<script src="http://7.url.cn/edu/jslib/comb/require-2.1.6,jquery-1.9.1.min.js" type="text/javascript"></script>
+<script src="/js/main.js" type="text/javascript"></script>
+
+
+
+
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+    tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+        processEscapes: true,
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    }
+});
+
+MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';                 
+    }       
+});
+</script>
+
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+  </div>
+</body>
+</html>
