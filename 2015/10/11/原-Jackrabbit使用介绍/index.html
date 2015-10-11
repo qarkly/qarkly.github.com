@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>[原]Jackrabbit使用介绍 | qarkly的博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="spring modules jcrspring-modules-jcr 是jackrabbit与spring集成的第三方模块，可以简化JSR-170 API使用。连接：http://www.infoq.com/cn/articles/spring-modules-jcr
+spring-modules-jcr主要是通过JcrTemplate中的execute方法操作jackrabbit的读写。在没">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[原]Jackrabbit使用介绍">
+<meta property="og:url" content="http://qarkly@github.com/2015/10/11/原-Jackrabbit使用介绍/index.html">
+<meta property="og:site_name" content="qarkly的博客">
+<meta property="og:description" content="spring modules jcrspring-modules-jcr 是jackrabbit与spring集成的第三方模块，可以简化JSR-170 API使用。连接：http://www.infoq.com/cn/articles/spring-modules-jcr
+spring-modules-jcr主要是通过JcrTemplate中的execute方法操作jackrabbit的读写。在没">
+<meta property="og:updated_time" content="2015-10-11T07:19:01.942Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="[原]Jackrabbit使用介绍">
+<meta name="twitter:description" content="spring modules jcrspring-modules-jcr 是jackrabbit与spring集成的第三方模块，可以简化JSR-170 API使用。连接：http://www.infoq.com/cn/articles/spring-modules-jcr
+spring-modules-jcr主要是通过JcrTemplate中的execute方法操作jackrabbit的读写。在没">
+  
+    <link rel="alternative" href="/atom.xml" title="qarkly的博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link rel="stylesheet" href="/css/style.css" type="text/css">
+</head>
+<body>
+  <div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+	<header id="header" class="inner">
+		<a href="/" class="profilepic">
+			
+			<img lazy-src="/selfi.png" class="js-avatar">
+			
+		</a>
+
+		<hgroup>
+		  <h1 class="header-author"><a href="/">qarkly</a></h1>
+		</hgroup>
+
+		
+		<p class="header-subtitle">个人技术博客</p>
+		
+
+		
+			<div class="switch-btn">
+				<div class="icon">
+					<div class="icon-ctn">
+						<div class="icon-wrap icon-house" data-idx="0">
+							<div class="birdhouse"></div>
+							<div class="birdhouse_holes"></div>
+						</div>
+						<div class="icon-wrap icon-ribbon hide" data-idx="1">
+							<div class="ribbon"></div>
+						</div>
+						
+						<div class="icon-wrap icon-link hide" data-idx="2">
+							<div class="loopback_l"></div>
+							<div class="loopback_r"></div>
+						</div>
+						
+						
+						<div class="icon-wrap icon-me hide" data-idx="3">
+							<div class="user"></div>
+							<div class="shoulder"></div>
+						</div>
+						
+					</div>
+					
+				</div>
+				<div class="tips-box hide">
+					<div class="tips-arrow"></div>
+					<ul class="tips-inner">
+						<li>菜单</li>
+						<li>标签</li>
+						
+						<li>友情链接</li>
+						
+						
+						<li>关于我</li>
+						
+					</ul>
+				</div>
+			</div>
+		
+
+		<div class="switch-area">
+			<div class="switch-wrap">
+				<section class="switch-part switch-part1">
+					<nav class="header-menu">
+						<ul>
+						
+							<li><a href="/">主页</a></li>
+				        
+							<li><a href="/archives">所有文章</a></li>
+				        
+							<li><a href="/tags/随笔">随笔</a></li>
+				        
+						</ul>
+					</nav>
+					<nav class="header-nav">
+						<div class="social">
+							
+								<a class="github" target="_blank" href="https://github.com/qarkly" title="github">github</a>
+					        
+								<a class="weibo" target="_blank" href="http://weibo.com/qarkly" title="weibo">weibo</a>
+					        
+								<a class="rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+					        
+						</div>
+					</nav>
+				</section>
+				
+				
+				<section class="switch-part switch-part2">
+					<div class="widget tagcloud" id="js-tagcloud">
+						<a href="/tags/Jackrabbit/" style="font-size: 16.67px;">Jackrabbit</a> <a href="/tags/Lambda/" style="font-size: 20px;">Lambda</a> <a href="/tags/java/" style="font-size: 20px;">java</a> <a href="/tags/java8/" style="font-size: 20px;">java8</a> <a href="/tags/mina/" style="font-size: 10px;">mina</a> <a href="/tags/内容仓库/" style="font-size: 16.67px;">内容仓库</a> <a href="/tags/生活/" style="font-size: 10px;">生活</a> <a href="/tags/算法/" style="font-size: 13.33px;">算法</a> <a href="/tags/系统知识/" style="font-size: 10px;">系统知识</a> <a href="/tags/设计模式/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/责任链/" style="font-size: 10px;">责任链</a> <a href="/tags/责任链模式/" style="font-size: 10px;">责任链模式</a> <a href="/tags/随笔/" style="font-size: 10px;">随笔</a>
+					</div>
+				</section>
+				
+				
+				
+				<section class="switch-part switch-part3">
+					<div id="js-friends">
+					
+			          <a target="_blank" class="main-nav-link switch-friends-link" href="http://blog.csdn.net/qarkly112649">csdn的博客</a>
+			        
+			        </div>
+				</section>
+				
+
+				
+				
+				<section class="switch-part switch-part4">
+				
+					<div id="js-aboutme">南京邮电大学09级,就职于华为从事web相关工作…</div>
+				</section>
+				
+			</div>
+		</div>
+	</header>				
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+  	<div class="overlay">
+  		<div class="slider-trigger"></div>
+  		<h1 class="header-author js-mobile-header hide">qarkly</h1>
+  	</div>
+	<div class="intrude-less">
+		<header id="header" class="inner">
+			<div class="profilepic">
+				<img lazy-src="/selfi.png" class="js-avatar">
+			</div>
+			<hgroup>
+			  <h1 class="header-author">qarkly</h1>
+			</hgroup>
+			
+			<p class="header-subtitle">个人技术博客</p>
+			
+			<nav class="header-menu">
+				<ul>
+				
+					<li><a href="/">主页</a></li>
+		        
+					<li><a href="/archives">所有文章</a></li>
+		        
+					<li><a href="/tags/随笔">随笔</a></li>
+		        
+		        <div class="clearfix"></div>
+				</ul>
+			</nav>
+			<nav class="header-nav">
+				<div class="social">
+					
+						<a class="github" target="_blank" href="https://github.com/qarkly" title="github">github</a>
+			        
+						<a class="weibo" target="_blank" href="http://weibo.com/qarkly" title="weibo">weibo</a>
+			        
+						<a class="rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+			        
+				</div>
+			</nav>
+		</header>				
+	</div>
+</nav>
+      <div class="body-wrap"><article id="post-原-Jackrabbit使用介绍" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2015/10/11/原-Jackrabbit使用介绍/" class="article-date">
+  	<time datetime="2015-10-11T06:57:20.000Z" itemprop="datePublished">2015-10-11</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      [原]Jackrabbit使用介绍
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+	<div class="article-tag tagcloud">
+		<ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Jackrabbit/">Jackrabbit</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/内容仓库/">内容仓库</a></li></ul>
+	</div>
+
+        
+	<div class="article-category tagcloud">
+	<a class="article-category-link" href="/categories/programming/">编程</a>
+	</div>
+
+
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="spring_modules_jcr">spring modules jcr</h2><p>spring-modules-jcr 是jackrabbit与spring集成的第三方模块，可以简化JSR-170 API使用。连接：<a href="http://www.infoq.com/cn/articles/spring-modules-jcr" target="_blank" rel="external">http://www.infoq.com/cn/articles/spring-modules-jcr</a></p>
+<p>spring-modules-jcr主要是通过JcrTemplate中的execute方法操作jackrabbit的读写。在没有事务的环境下，每一个execute都使用独立的session，方法执行完后立即释放。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span><br><span class="line">	 * <span class="doctag">@see</span> org.springmodules.jcr.JcrOperations#execute(org.springmodules.jcr.JcrCallback,</span><br><span class="line">	 *      boolean)</span><br><span class="line">	 */</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> Object <span class="title">execute</span><span class="params">(JcrCallback action, <span class="keyword">boolean</span> exposeNativeSession)</span> <span class="keyword">throws</span> DataAccessException </span>&#123;</span><br><span class="line"> 		Session session = getSession();</span><br><span class="line">                <span class="comment">//判断当前是否在事务下</span></span><br><span class="line">		<span class="keyword">boolean</span> existingTransaction = SessionFactoryUtils.isSessionThreadBound(session, getSessionFactory());</span><br><span class="line">		<span class="keyword">if</span> (existingTransaction) &#123;</span><br><span class="line">			logger.debug(<span class="string">"Found thread-bound Session for JcrTemplate"</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">try</span> &#123;</span><br><span class="line">			Session sessionToExpose = (exposeNativeSession ? session : createSessionProxy(session));</span><br><span class="line">			Object result = action.doInJcr(sessionToExpose);</span><br><span class="line">			<span class="comment">// <span class="doctag">TODO:</span> does flushing (session.refresh) should work here?</span></span><br><span class="line">			<span class="comment">// flushIfNecessary(session, existingTransaction);</span></span><br><span class="line">			<span class="keyword">return</span> result;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">catch</span> (RepositoryException ex) &#123;</span><br><span class="line">			<span class="keyword">throw</span> convertJcrAccessException(ex);</span><br><span class="line">			<span class="comment">// IOException are not converted here</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">catch</span> (IOException ex) &#123;</span><br><span class="line">			<span class="comment">// use method to decouple the static call</span></span><br><span class="line">			<span class="keyword">throw</span> convertJcrAccessException(ex);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">catch</span> (RuntimeException ex) &#123;</span><br><span class="line">			<span class="comment">// Callback code threw application exception...</span></span><br><span class="line">			<span class="keyword">throw</span> convertJcrAccessException(ex);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">finally</span> &#123;</span><br><span class="line">			<span class="keyword">if</span> (existingTransaction) &#123;</span><br><span class="line">				logger.debug(<span class="string">"Not closing pre-bound Jcr Session after JcrTemplate"</span>);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">else</span> &#123;</span><br><span class="line">                     <span class="comment">//不在事务环境下，立即释放session</span></span><br><span class="line">				SessionFactoryUtils.releaseSession(session, getSessionFactory());</span><br><span class="line"></span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">~</span><br></pre></td></tr></table></figure></p>
+<p>测试代码<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">executeTask</span><span class="params">()</span></span><br><span class="line">	</span>&#123;</span><br><span class="line">		logger.debug(<span class="string">"get the Gadget class Bean,DagetDao=&#123;&#125;"</span>, dao);</span><br><span class="line">                <span class="comment">//添加节点</span></span><br><span class="line">		dao.addNodeIfAbsent(<span class="string">"Gadget"</span>);</span><br><span class="line">                <span class="comment">//查询节点</span></span><br><span class="line">		<span class="keyword">boolean</span> result = dao.nodeExists(<span class="string">"Gadget"</span>);</span><br><span class="line">		logger.debug(<span class="string">"add Node success or not ,&#123;&#125;"</span>,result);</span><br><span class="line">		<span class="keyword">try</span>&#123;</span><br><span class="line">                <span class="comment">//删除节点</span></span><br><span class="line">			dao.deleteNodebyName(<span class="string">"Gadget"</span>);</span><br><span class="line"></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">catch</span> (Exception e)</span><br><span class="line">		&#123;</span><br><span class="line">			e.printStackTrace();</span><br><span class="line">		&#125;</span><br><span class="line">                <span class="comment">//再次查询节点</span></span><br><span class="line">		logger.debug(<span class="string">"Node exist or not ,&#123;&#125;"</span>,dao.nodeExists(<span class="string">"Gadget"</span>));</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure></p>
+<p>上面测试代码总共4次操作jackrabbit，应该使用4个session</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">20</span> <span class="number">20</span>:<span class="number">24</span>:<span class="number">42</span> [main] DEBUG org.springmodules.jcr.JcrSessionFactory -no session holder provider manager <span class="built_in">set</span>; <span class="keyword">using</span> the <span class="keyword">default</span> one</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">20</span> <span class="number">20</span>:<span class="number">24</span>:<span class="number">42</span> [thread-<span class="number">0</span>] DEBUG com.huawei.jackrabbit.test.service.GadgetnoTransactionService -get the Gadget <span class="keyword">class</span> Bean,DagetDao=com.huawei.jackrabbit.test.DAO.GadgetDao@<span class="number">1e22</span>c75</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">20</span> <span class="number">20</span>:<span class="number">24</span>:<span class="number">42</span> [thread-<span class="number">0</span>] DEBUG org.springmodules.jcr.SessionFactoryUtils -Opening JCR Session</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">20</span> <span class="number">20</span>:<span class="number">24</span>:<span class="number">42</span> [thread-<span class="number">0</span>] DEBUG com.huawei.jackrabbit.test.DAO.GadgetDao -Starting from root node.  node=node /</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">20</span> <span class="number">20</span>:<span class="number">24</span>:<span class="number">43</span> [thread-<span class="number">0</span>] INFO  com.huawei.jackrabbit.test.DAO.GadgetDao -Saved node.  node=node /Gadget</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">20</span> <span class="number">20</span>:<span class="number">24</span>:<span class="number">43</span> [thread-<span class="number">0</span>] DEBUG org.springmodules.jcr.SessionFactoryUtils -Closing JCR Session</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">20</span> <span class="number">20</span>:<span class="number">24</span>:<span class="number">43</span> [thread-<span class="number">0</span>] DEBUG org.springmodules.jcr.SessionFactoryUtils -Opening JCR Session</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">20</span> <span class="number">20</span>:<span class="number">24</span>:<span class="number">43</span> [thread-<span class="number">0</span>] DEBUG com.huawei.jackrabbit.test.DAO.GadgetDao -Starting from root node.  node=node /</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">20</span> <span class="number">20</span>:<span class="number">24</span>:<span class="number">43</span> [thread-<span class="number">0</span>] DEBUG org.springmodules.jcr.SessionFactoryUtils -Closing JCR Session</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">20</span> <span class="number">20</span>:<span class="number">24</span>:<span class="number">43</span> [thread-<span class="number">0</span>] DEBUG com.huawei.jackrabbit.test.service.GadgetnoTransactionService -add Node success or not ,<span class="literal">true</span></span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">20</span> <span class="number">20</span>:<span class="number">24</span>:<span class="number">43</span> [thread-<span class="number">0</span>] DEBUG org.springmodules.jcr.SessionFactoryUtils -Opening JCR Session</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">20</span> <span class="number">20</span>:<span class="number">24</span>:<span class="number">43</span> [thread-<span class="number">0</span>] DEBUG com.huawei.jackrabbit.test.DAO.GadgetDao -<span class="keyword">delete</span> the node name =Gadget</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">20</span> <span class="number">20</span>:<span class="number">24</span>:<span class="number">43</span> [thread-<span class="number">0</span>] DEBUG com.huawei.jackrabbit.test.DAO.GadgetDao -the node exist or not ,<span class="literal">false</span></span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">20</span> <span class="number">20</span>:<span class="number">24</span>:<span class="number">43</span> [thread-<span class="number">0</span>] DEBUG org.springmodules.jcr.SessionFactoryUtils -Closing JCR Session</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">20</span> <span class="number">20</span>:<span class="number">24</span>:<span class="number">43</span> [thread-<span class="number">0</span>] DEBUG org.springmodules.jcr.SessionFactoryUtils -Opening JCR Session</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">20</span> <span class="number">20</span>:<span class="number">24</span>:<span class="number">43</span> [thread-<span class="number">0</span>] DEBUG com.huawei.jackrabbit.test.DAO.GadgetDao -Starting from root node.  node=node /</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">20</span> <span class="number">20</span>:<span class="number">24</span>:<span class="number">43</span> [thread-<span class="number">0</span>] DEBUG org.springmodules.jcr.SessionFactoryUtils -Closing JCR Session</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">20</span> <span class="number">20</span>:<span class="number">24</span>:<span class="number">43</span> [thread-<span class="number">0</span>] DEBUG com.huawei.jackrabbit.test.service.GadgetnoTransactionService -Node exist or not ,<span class="literal">false</span></span><br></pre></td></tr></table></figure>
+<p>打印日志可以看出4次打开和关闭session</p>
+<p>在事务环境下，每个事务都独立使用一个session，事务提交之后立即释放。所以上面的测试代码在事务下只使用一个session</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">2015-08-21 09:16:06 [main] DEBUG org.springmodules.jcr.JcrSessionFactory -no session holder provider manager <span class="operator"><span class="keyword">set</span>;</span> using the default one</span><br><span class="line">2015-08-21 09:16:06 [thread-<span class="operator">0] DEBUG org.springmodules.jcr.jackrabbit.LocalTransactionManager -Creating <span class="keyword">new</span> <span class="keyword">transaction</span> <span class="keyword">with</span> <span class="keyword">name</span> [com.huawei.jackrabbit.<span class="keyword">test</span>.service.GadgetService.executeTask]: PROPAGATION_REQUIRED,ISOLATION_DEFAULT;</span> ''</span><br><span class="line">2015-08-21 09:16:06 [thread-<span class="operator">0] DEBUG org.springmodules.jcr.jackrabbit.LocalTransactionManager -Opened <span class="keyword">new</span> <span class="keyword">session</span> [<span class="keyword">session</span>-<span class="keyword">admin</span>-<span class="number">3</span>] <span class="keyword">for</span> JCR <span class="keyword">transaction</span></span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">06</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG com.huawei.jackrabbit.<span class="keyword">test</span>.service.GadgetService -<span class="keyword">get</span> the Gadget <span class="keyword">class</span> Bean,DagetDao=com.huawei.jackrabbit.<span class="keyword">test</span>.DAO.GadgetDao@<span class="number">115470</span><span class="keyword">e</span></span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">06</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG org.springmodules.jcr.JcrTemplate -<span class="keyword">Found</span> <span class="keyword">thread</span>-<span class="keyword">bound</span> <span class="keyword">Session</span> <span class="keyword">for</span> JcrTemplate</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">07</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG com.huawei.jackrabbit.<span class="keyword">test</span>.DAO.GadgetDao -<span class="keyword">Starting</span> <span class="keyword">from</span> root node.  node=node /</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">07</span> [<span class="keyword">thread</span>-<span class="number">0</span>] INFO  com.huawei.jackrabbit.<span class="keyword">test</span>.DAO.GadgetDao -Saved node.  node=node /Gadget</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">07</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG org.springmodules.jcr.JcrTemplate -<span class="keyword">Not</span> closing pre-<span class="keyword">bound</span> Jcr <span class="keyword">Session</span> <span class="keyword">after</span> JcrTemplate</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">07</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG org.springmodules.jcr.JcrTemplate -<span class="keyword">Found</span> <span class="keyword">thread</span>-<span class="keyword">bound</span> <span class="keyword">Session</span> <span class="keyword">for</span> JcrTemplate</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">07</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG com.huawei.jackrabbit.<span class="keyword">test</span>.DAO.GadgetDao -<span class="keyword">Starting</span> <span class="keyword">from</span> root node.  node=node /</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">07</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG org.springmodules.jcr.JcrTemplate -<span class="keyword">Not</span> closing pre-<span class="keyword">bound</span> Jcr <span class="keyword">Session</span> <span class="keyword">after</span> JcrTemplate</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">07</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG com.huawei.jackrabbit.<span class="keyword">test</span>.service.GadgetService -<span class="keyword">add</span> Node <span class="keyword">success</span> <span class="keyword">or</span> <span class="keyword">not</span> ,<span class="literal">true</span></span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">07</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG org.springmodules.jcr.JcrTemplate -<span class="keyword">Found</span> <span class="keyword">thread</span>-<span class="keyword">bound</span> <span class="keyword">Session</span> <span class="keyword">for</span> JcrTemplate</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">07</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG com.huawei.jackrabbit.<span class="keyword">test</span>.DAO.GadgetDao -<span class="keyword">delete</span> the node <span class="keyword">name</span> =Gadget</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">07</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG com.huawei.jackrabbit.<span class="keyword">test</span>.DAO.GadgetDao -the node exist <span class="keyword">or</span> <span class="keyword">not</span> ,<span class="literal">false</span></span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">07</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG org.springmodules.jcr.JcrTemplate -<span class="keyword">Not</span> closing pre-<span class="keyword">bound</span> Jcr <span class="keyword">Session</span> <span class="keyword">after</span> JcrTemplate</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">07</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG org.springmodules.jcr.JcrTemplate -<span class="keyword">Found</span> <span class="keyword">thread</span>-<span class="keyword">bound</span> <span class="keyword">Session</span> <span class="keyword">for</span> JcrTemplate</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">07</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG com.huawei.jackrabbit.<span class="keyword">test</span>.DAO.GadgetDao -<span class="keyword">Starting</span> <span class="keyword">from</span> root node.  node=node /</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">07</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG org.springmodules.jcr.JcrTemplate -<span class="keyword">Not</span> closing pre-<span class="keyword">bound</span> Jcr <span class="keyword">Session</span> <span class="keyword">after</span> JcrTemplate</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">07</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG com.huawei.jackrabbit.<span class="keyword">test</span>.service.GadgetService -Node exist <span class="keyword">or</span> <span class="keyword">not</span> ,<span class="literal">false</span></span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">07</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG org.springmodules.jcr.jackrabbit.LocalTransactionManager -Initiating <span class="keyword">transaction</span> <span class="keyword">commit</span></span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">07</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG org.springmodules.jcr.jackrabbit.LocalTransactionManager -Committing JCR <span class="keyword">transaction</span> <span class="keyword">on</span> <span class="keyword">session</span> [<span class="keyword">session</span>-<span class="keyword">admin</span>-<span class="number">3</span>]</span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">07</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG org.springmodules.jcr.jackrabbit.LocalTransactionManager -Closing JCR <span class="keyword">session</span> [<span class="keyword">session</span>-<span class="keyword">admin</span>-<span class="number">3</span>] <span class="keyword">after</span> <span class="keyword">transaction</span></span><br><span class="line"><span class="number">2015</span>-<span class="number">08</span>-<span class="number">21</span> <span class="number">09</span>:<span class="number">16</span>:<span class="number">07</span> [<span class="keyword">thread</span>-<span class="number">0</span>] DEBUG org.springmodules.jcr.SessionFactoryUtils -Closing JCR <span class="keyword">Session</span></span></span><br></pre></td></tr></table></figure>
+<p>上面的日志显示本次操作只使用了[session-admin-3] session</p>
+<p>嵌套事务使用<br> spring中默认配置事务传播机制为PROPAGATION_REQUIRED</p>
+<p>如果当前处在事务中调用另一事务方法，会被合成一个事务。图中事务方法2发生异常，进行事务回滚后，事务方法1结束后会提交事务，事务已经回滚再次提交会报异常<br><figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">encountered an error<span class="class">.org</span><span class="class">.springframework</span><span class="class">.transaction</span><span class="class">.UnexpectedRollbackException</span>: Transaction rolled back because it has been marked as rollback-only</span><br><span class="line">    at java<span class="class">.util</span><span class="class">.concurrent</span><span class="class">.FutureTask</span><span class="variable">$Sync</span>.<span class="function"><span class="title">innerGet</span><span class="params">(FutureTask.java:<span class="number">252</span>)</span></span></span><br><span class="line">    at java<span class="class">.util</span><span class="class">.concurrent</span><span class="class">.FutureTask</span><span class="class">.get</span>(FutureTask<span class="class">.java</span>:<span class="number">111</span>)</span><br></pre></td></tr></table></figure></p>
+<p>在实际使用中需要注意嵌套事务的使用。</p>
+<h3 id="事务和非事务性能对比">事务和非事务性能对比</h3><p>根据节点名来查询jackrabbit节点是否存在，比较在事务和非事务下的性能差异</p>
+<p>在事务和非事务下使用50线程分别查询节点并统计查询消耗的平均时间、最大和最大时间<br>非事务下又分为使用单一session和多session场景，下面是数据统计：</p>
+<ol>
+<li><p>使用事务，50个线程有50个事务</p>
+<figure class="highlight livecodeserver"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-<span class="built_in">average</span> <span class="built_in">time</span>:<span class="number">88</span>(ms), <span class="built_in">max</span> <span class="built_in">time</span> :<span class="number">94</span>(ms), <span class="built_in">min</span> <span class="built_in">time</span> :<span class="number">86</span>(ms)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>非事务，每次查询都使用新session</p>
+<figure class="highlight livecodeserver"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-<span class="built_in">average</span> <span class="built_in">time</span>:<span class="number">44</span>(ms), <span class="built_in">max</span> <span class="built_in">time</span> :<span class="number">54</span>(ms), <span class="built_in">min</span> <span class="built_in">time</span> :<span class="number">39</span>(ms)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>非事务，每次查询使用同一session</p>
+<figure class="highlight livecodeserver"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-<span class="built_in">average</span> <span class="built_in">time</span>:<span class="number">12</span>(ms), <span class="built_in">max</span> <span class="built_in">time</span> :<span class="number">23</span>(ms), <span class="built_in">min</span> <span class="built_in">time</span> :<span class="number">8</span>(ms)</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>对比使用单一session耗时最小，性能最佳，使用事务性能最差，但是从事务的ACID特性考虑，使用单一session和多个session不满足原子性要求<br>上面测试代码executeTask方法在多线程下使用单一session操作会报 javax.jcr.InvalidItemStateException异常，使用多session操作 报javax.jcr.ItemNotFoundException异常。而在事务环境下可以正常完成。<br>是否使用事务需要从业务的使用场景考虑，如果业务场景就满足原子性操作，或者异常有处理措施保证数据一致性，那么不使用事务也可以，但是这种往往比较复杂对session使用也需要谨慎考虑。<br>考虑一种场景，一次性添加多个节点，要不全部成功要不全部失败，如果中途失败，前面添加的节点都需要删除，在事务下可以回滚状态，在非事务下就必须代码删除，这样处理很复杂而且容易出错</p>
+
+      
+    </div>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2015/08/17/译-Jackrabbit并发控制/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">[译]Jackrabbit并发控制</div>
+      <strong class="article-nav-caption">></strong>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<div class="share">
+	<!-- JiaThis Button BEGIN -->
+	<div class="jiathis_style">
+		<span class="jiathis_txt">分享到：</span>
+		<a class="jiathis_button_tsina"></a>
+		<a class="jiathis_button_cqq"></a>
+		<a class="jiathis_button_douban"></a>
+		<a class="jiathis_button_weixin"></a>
+		<a class="jiathis_button_tumblr"></a>
+		<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+	</div>
+	<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=1405949716054953" charset="utf-8"></script>
+	<!-- JiaThis Button END -->
+</div>
+
+
+
+<div class="duoshuo">
+	<!-- 多说评论框 start -->
+	<div class="ds-thread" data-thread-key="原-Jackrabbit使用介绍" data-title="[原]Jackrabbit使用介绍" data-url="http://qarkly@github.com/2015/10/11/原-Jackrabbit使用介绍/"></div>
+	<!-- 多说评论框 end -->
+	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+	<script type="text/javascript">
+	var duoshuoQuery = {short_name:"true"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		 || document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+	<!-- 多说公共JS代码 end -->
+</div>
+
+
+
+
+</div>
+      <footer id="footer">
+  <div class="outer">
+    <div id="footer-info">
+    	<div class="footer-left">
+    		&copy; 2015 qarkly
+    	</div>
+      	<div class="footer-right">
+      		<a href="http://hexo.io/" target="_blank">Hexo</a>  Theme <a href="https://github.com/litten/hexo-theme-yilia" target="_blank">Yilia</a> by Litten
+      	</div>
+    </div>
+  </div>
+</footer>
+    </div>
+    
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css" type="text/css">
+
+
+<script>
+	var yiliaConfig = {
+		fancybox: true,
+		mathjax: true,
+		animate: true,
+		isHome: false,
+		isPost: true,
+		isArchive: false,
+		isTag: false,
+		isCategory: false,
+		open_in_new: false
+	}
+</script>
+<script src="http://7.url.cn/edu/jslib/comb/require-2.1.6,jquery-1.9.1.min.js" type="text/javascript"></script>
+<script src="/js/main.js" type="text/javascript"></script>
+
+
+
+
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+    tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+        processEscapes: true,
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    }
+});
+
+MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';                 
+    }       
+});
+</script>
+
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+  </div>
+</body>
+</html>
