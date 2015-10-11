@@ -4,7 +4,7 @@
   <subtitle><![CDATA[个人技术博客]]></subtitle>
   <link href="/atom.xml" rel="self"/>
   <link href="http://qarkly@github.com/"/>
-  <updated>2015-10-11T07:19:01.942Z</updated>
+  <updated>2015-10-11T13:44:11.087Z</updated>
   <id>http://qarkly@github.com/</id>
   
   <author>
@@ -13,6 +13,145 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title><![CDATA[[原]red5知识共享]]></title>
+    <link href="http://qarkly@github.com/2015/10/11/%E5%8E%9F-red5%E7%9F%A5%E8%AF%86%E5%85%B1%E4%BA%AB/"/>
+    <id>http://qarkly@github.com/2015/10/11/原-red5知识共享/</id>
+    <published>2015-10-11T10:32:39.000Z</published>
+    <updated>2015-10-11T13:44:11.087Z</updated>
+    <content type="html"><![CDATA[<p><em>此文是从之前做的red5知识分享PPT中摘取，内容比较简单粗略。当时在讯飞做爱吼网流媒体服务smp，对red5有点了解。</em></p>
+<h3 id="Red5中AMF格式解析">Red5中AMF格式解析</h3><ol>
+<li><p>AMF0数据类型及标志位</p>
+<ul>
+<li>Number - 0x00 (Encoded as IEEE 64-bit double-precision floating point number)</li>
+<li>Boolean - 0x01 (Encoded as a single byte of value 0x00 or 0x01)</li>
+<li>Object - 0x03 (Set of key/value pairs)</li>
+<li>Null - 0x05</li>
+<li>ECMA Array - 0x08 (32-bit entry count)</li>
+<li>Object End - 0x09 (preceded by a empty 16-bit string length)</li>
+<li>Strict Array - 0x0a (32-bit entry count)</li>
+<li>Date - 0x0b (Encoded as IEEE 64-bit double-precision floating point number with 16-bit integer timezone offset)</li>
+<li>Long String - 0x0c (32-bit integer string length with UTF-8 string)</li>
+<li>XML Document - 0xf0 (32-bit integer string length with UTF-8 string)</li>
+<li>Typed Object - 0x10 (16-bit integer name length with UTF-8 name, followed by entries)</li>
+<li>Switch to AMF3 - 0x11</li>
+</ul>
+</li>
+<li><p>AMF3数据类型及标志位</p>
+<ul>
+<li>Undefined - 0x00</li>
+<li>Null - 0x01</li>
+<li>Boolean False - 0x02</li>
+<li>Boolean True - 0x03</li>
+<li>Integer - 0x04 (expandable 8+ bit integer)</li>
+<li>Double - 0x05 (Encoded as IEEE 64-bit double-precision floating point number)</li>
+<li>String - 0x06 (expandable 8+ bit integer string length with a UTF-8 string)</li>
+<li>XML - 0x07 (expandable 8+ bit integer string length and/or flags with a UTF-8 string)</li>
+<li>Date - 0x08 (expandable 8+ bit integer flags with a IEEE 64-bit double-precision floating point UTC offset time)</li>
+<li>Array - 0x09 (expandable 8+ bit integer entry count and/or flags with optional expandable 8+ bit integer name lengths with a UTF-8 names)</li>
+<li>Object - 0x0A (expandable 8+ bit integer entry count and/or flags with optional expandable 8+ - bit integer name lengths with a UTF-8 names)</li>
+<li>XML End - 0x0B (expandable 8+ bit integer flags)</li>
+<li>ByteArray - 0x0C (expandable 8+ bit integer flags with optional 8 bit byte length)</li>
+</ul>
+</li>
+<li><p>Red5中AMF格式解析实现<br></p><p><img src="../img/red5/amf.png" alt="red5 amf格式解析实现"></p><br><b>Example</b>  <p></p>
+<ul>
+<li><p>解析AMF数据</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">IoBuffer buffer = IoBuffer.wrap(bytes);   <span class="comment">//bytes 为AMF0格式byte数组</span></span><br><span class="line">Input input = <span class="keyword">new</span> org.red5.io.amf.Input(buffer);</span><br><span class="line">Deserializer deserializer  = <span class="keyword">new</span> Deserializer();</span><br><span class="line">String str = deserializer.deserialize(input, String.class);</span><br><span class="line">Object  object = deserializer.deserialize(input, Object .class);</span><br><span class="line">…</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>构造AMF数据</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">String str = “test”;</span><br><span class="line">Output output = <span class="keyword">new</span> org.red5.io.amf.Output(buffer);</span><br><span class="line">Serializer serializer = <span class="keyword">new</span> Serializer();</span><br><span class="line">serializer.serialize(output, str);</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h3 id="Red5解析RTMP消息包">Red5解析RTMP消息包</h3><ul>
+<li><p>背景知识<br>  Mina框架核心部分框架<br><img src="../img/red5/mina.png" alt="mina架构图"><br><em>Mina中由Filter过滤器处理来自网络数据包，然后转交给应用层的IoHandler做具体的业务处理</em></p>
+</li>
+<li><p>RMTP消息包解析<br>  RTMPMinaProtocolDecoder接收来自Mina的数据，真正做数据解析是由RTMPProtocolDecoder类来完成RTMP数据包header和body的解析工作<br><img src="../img/red5/decoder.png" alt="red5消息格式解析"></p>
+</li>
+<li>Header解析<br>RTMP包头结构<br>包头有4种长度:12, 8, 4,  1 byte(s).<br>完整的12字节RTMP包头每个字节的含义:  </li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>用途</th>
+<th>大小(Byte)</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Head_Type</td>
+<td>1</td>
+<td>包头</td>
+</tr>
+<tr>
+<td>TiMMER</td>
+<td>3</td>
+<td>时间戳</td>
+</tr>
+<tr>
+<td>AMFSize</td>
+<td>3</td>
+<td>数据大小</td>
+</tr>
+<tr>
+<td>AMFType</td>
+<td>1</td>
+<td>数据类型</td>
+</tr>
+<tr>
+<td>StreamID</td>
+<td>4</td>
+<td>流ID</td>
+</tr>
+</tbody>
+</table>
+<p>完整的RTMP包头是12bytes,<br>包含时间戳 ,AMFSize, AMFType,StreamID信息,<br>8字节的包头只纪录 了时间戳,AMFSize,AMFType,<br>其他字节的包头纪录信息依次类推 </p>
+<p> <strong> Red5如何将8，4,  1 字节的不完整包头构造成完整的Header消息? </strong><br>详见：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">在RTMPMinaProtocolDecoder.decode(IoSession session, IoBuffer in, ProtocolDecoderOutput out)方法中</span><br><span class="line"> <span class="comment">// get our state</span></span><br><span class="line"> <span class="keyword">final</span> ProtocolState state = (ProtocolState)</span><br><span class="line"> session.getAttribute(ProtocolState.SESSION_KEY);</span><br><span class="line"></span><br><span class="line">在RTMPProtocolDecoder. decode(ProtocolState state, IoBuffer in)方法中</span><br><span class="line"><span class="keyword">final</span> RTMP rtmp = (RTMP) state;</span><br></pre></td></tr></table></figure></p>
+<p>   Red5通过在IoSession中维护Header消息的map,通过获取上一个header来将缺失的包头信息补齐，具体代码见<br>RTMPProtocolDecoder. decodeHeader(IoBuffer in, Header lastHeader)方法</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="../img/red5/header.png" alt="header消息解析"></p>
+<ul>
+<li><p>Body解析  </p>
+<p>   Rtmp包默认的最大长度为128字节,(或通过chunksize改变rtmp包最大<br>长度), 当AMF数据超过128Byte的时候就可能有多个rtmp包组成,如果需<br>要解码的rtmp包太长则被TCP协议分割成多个TCP包.那么解码的时候需要<br>先将包含rtmp包的tcp封包合并, 再把合并的数据解码,解码后可得到amf<br>格式的数据,将这些AMF数据取出来就可以对AMF数据解码</p>
+<p> Red5在RTMP中像维护header一样维护一份packet的map信息，除此之外还有维护当前的解码状态。Body的解析首先要从header中得到一个完整packet消息的大小，根据当前的接受到的字节大小还有chunksize来判断是否收到一个完整的packet消息的字节，然后再进行body解析与header形成一个业务类，最后转发到RTMPMinaIoHandler做业务处理。</p>
+<p> 具体代码见RTMPPotocolDecoder.decodePacket(RTMP rtmp, IoBuffer in)方法和decodeMessage(RTMP rtmp, Header header, IoBuffer in)方法</p>
+</li>
+</ul>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p><em>此文是从之前做的red5知识分享PPT中摘取，内容比较简单粗略。当时在讯飞做爱吼网流媒体服务smp，对red5有点了解。</em></p>
+<h3 id="Red5中AMF格式解析">Red5中AMF格式解析</h3><ol>
+<li><p>AMF0数据类型及标志位]]>
+    </summary>
+    
+      <category term="iflytek" scheme="http://qarkly@github.com/tags/iflytek/"/>
+    
+      <category term="red5" scheme="http://qarkly@github.com/tags/red5/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[Hello World]]></title>
+    <link href="http://qarkly@github.com/2015/10/11/hello-world/"/>
+    <id>http://qarkly@github.com/2015/10/11/hello-world/</id>
+    <published>2015-10-11T09:59:41.894Z</published>
+    <updated>2015-10-11T09:59:41.894Z</updated>
+    <content type="html"><![CDATA[<p>今日把以前博客都迁移过来了，对于个人博客只所以选择hexo就是因为特意中意这个主题。许多选择何尝不是，<em>just I Like</em></p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>今日把以前博客都迁移过来了，对于个人博客只所以选择hexo就是因为特意中意这个主题。许多选择何尝不是，<em>just I Like</em></p>
+]]>
+    </summary>
+    
+      <category term="生活" scheme="http://qarkly@github.com/tags/%E7%94%9F%E6%B4%BB/"/>
+    
+      <category term="随笔" scheme="http://qarkly@github.com/tags/%E9%9A%8F%E7%AC%94/"/>
+    
+  </entry>
   
   <entry>
     <title><![CDATA[[原]Jackrabbit使用介绍]]></title>
@@ -120,25 +259,6 @@
       <category term="Jackrabbit" scheme="http://qarkly@github.com/tags/Jackrabbit/"/>
     
       <category term="内容仓库" scheme="http://qarkly@github.com/tags/%E5%86%85%E5%AE%B9%E4%BB%93%E5%BA%93/"/>
-    
-  </entry>
-  
-  <entry>
-    <title><![CDATA[Hello World]]></title>
-    <link href="http://qarkly@github.com/2015/08/15/hello-world/"/>
-    <id>http://qarkly@github.com/2015/08/15/hello-world/</id>
-    <published>2015-08-15T09:58:45.993Z</published>
-    <updated>2015-08-15T09:58:45.993Z</updated>
-    <content type="html"><![CDATA[<p>今日把以前博客都迁移过来了，对于个人博客只所以选择hexo就是因为特意中意这个主题。许多选择何尝不是，<em>just I Like</em></p>
-]]></content>
-    <summary type="html">
-    <![CDATA[<p>今日把以前博客都迁移过来了，对于个人博客只所以选择hexo就是因为特意中意这个主题。许多选择何尝不是，<em>just I Like</em></p>
-]]>
-    </summary>
-    
-      <category term="生活" scheme="http://qarkly@github.com/tags/%E7%94%9F%E6%B4%BB/"/>
-    
-      <category term="随笔" scheme="http://qarkly@github.com/tags/%E9%9A%8F%E7%AC%94/"/>
     
   </entry>
   

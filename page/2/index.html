@@ -114,7 +114,7 @@
 				
 				<section class="switch-part switch-part2">
 					<div class="widget tagcloud" id="js-tagcloud">
-						<a href="/tags/Jackrabbit/" style="font-size: 16.67px;">Jackrabbit</a> <a href="/tags/Lambda/" style="font-size: 20px;">Lambda</a> <a href="/tags/java/" style="font-size: 20px;">java</a> <a href="/tags/java8/" style="font-size: 20px;">java8</a> <a href="/tags/mina/" style="font-size: 10px;">mina</a> <a href="/tags/内容仓库/" style="font-size: 16.67px;">内容仓库</a> <a href="/tags/生活/" style="font-size: 10px;">生活</a> <a href="/tags/算法/" style="font-size: 13.33px;">算法</a> <a href="/tags/系统知识/" style="font-size: 10px;">系统知识</a> <a href="/tags/设计模式/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/责任链/" style="font-size: 10px;">责任链</a> <a href="/tags/责任链模式/" style="font-size: 10px;">责任链模式</a> <a href="/tags/随笔/" style="font-size: 10px;">随笔</a>
+						<a href="/tags/Jackrabbit/" style="font-size: 16.67px;">Jackrabbit</a> <a href="/tags/Lambda/" style="font-size: 20px;">Lambda</a> <a href="/tags/iflytek/" style="font-size: 10px;">iflytek</a> <a href="/tags/java/" style="font-size: 20px;">java</a> <a href="/tags/java8/" style="font-size: 20px;">java8</a> <a href="/tags/mina/" style="font-size: 10px;">mina</a> <a href="/tags/red5/" style="font-size: 10px;">red5</a> <a href="/tags/内容仓库/" style="font-size: 16.67px;">内容仓库</a> <a href="/tags/生活/" style="font-size: 10px;">生活</a> <a href="/tags/算法/" style="font-size: 13.33px;">算法</a> <a href="/tags/系统知识/" style="font-size: 10px;">系统知识</a> <a href="/tags/设计模式/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/责任链/" style="font-size: 10px;">责任链</a> <a href="/tags/责任链模式/" style="font-size: 10px;">责任链模式</a> <a href="/tags/随笔/" style="font-size: 10px;">随笔</a>
 					</div>
 				</section>
 				
@@ -185,6 +185,91 @@
 	</div>
 </nav>
       <div class="body-wrap">
+  
+    <article id="post-责任链模式的使用" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2014/06/05/责任链模式的使用/" class="article-date">
+  	<time datetime="2014-06-05T06:56:30.000Z" itemprop="datePublished">2014-06-05</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2014/06/05/责任链模式的使用/">责任链模式的使用</a>
+    </h1>
+  
+
+      </header>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="责任链模式（Chain_of_Responsiblity）">责任链模式（Chain of Responsiblity）</h2><p>  定义：　使多个对象都有机会处理请求，从而避免请求的发送者和接受者之间的耦合关系。将这个对象连成一条链，并沿着这条链传递该请求，直到有一个对象处理他为止。<br>       结构实图：<br> <img src="/img/programming/Image.png" alt=""><br> 责任链模式涉及角色如下：</p>
+<pre><code><span class="bullet">* </span>待处理（Client）角色：一个需要处理的请求，可以是消息或者其他
+<span class="bullet">* </span>抽象处理者（Handler）角色：定义一个对外处理请求的接口。由它将请求分发到具体处理者（ ConcreteHandler）角色进行逐次请求处理。抽象处理者（Handler）角色和具体处理者（ConcreteHandler）角色是聚合关系
+<span class="bullet">* </span>具体处理者（ConcreteHandler）角色：具体处理者接受到请求时，对其感兴趣的消息处理，或者传递给下个具体处理者处理
+</code></pre><h2 id="SMP中责任链模式的运用">SMP中责任链模式的运用</h2><p>接口定义：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Filter</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">     <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">messageReceived</span><span class="params">(String msgType,List&lt;String&gt; contents,NextFliter nextFliter)</span></span>;</span><br><span class="line"></span><br><span class="line">     <span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">interface</span> <span class="title">NextFliter</span></span>&#123;</span><br><span class="line"></span><br><span class="line">            <span class="function"><span class="keyword">void</span> <span class="title">doFilter</span><span class="params">(String msgType,List&lt;String&gt; contents)</span></span>;</span><br><span class="line"></span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line">     <span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">interface</span> <span class="title">FilterChain</span></span>&#123;</span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addFirst</span><span class="params">(Filter filter)</span></span>;</span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addLast</span><span class="params">(Filter filter)</span></span>;</span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">messageReceived</span><span class="params">(String msgType, List&lt;String&gt; contents)</span></span>;</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>接口详细说明：  </p>
+<ul>
+<li><p>Filter接口:  </p>
+<p>  对应责任链模式中的就是具体处理者（ConcreteHandler）角色，只有一个方法messageReceived(String msgType,List<string> contents,NextFliter nextFliter). 其中msgType和contents就是需要处理的请求消息，对应责任链中的待处理（Client）角色。nextFliter是调用下一个具体处理（ConcreteHandler）角色，这样做的好处就是Filter不必只有下一个Filter的引用。具体如何实现见下面的FilterChain的实现  </string></p>
+</li>
+<li><p>FilterChain接口：</p>
+<p>  对应责任链模式中的抽象处理（Handler）者角色。该接口持有所有的Filter，addFirst(Filter filter)和addLast(Filter filter)方法就是向FilterChain中加入具体处理者（ConcreteHandler）角色。当请求消息到来时，FilterChain调用自身的messageReceived方法，将请求传给第一个Filter，Filter再通过自己的messageReceived方法对请求处理或者传递给下一个Filter  </p>
+</li>
+<li><p>NextFliter接口：</p>
+<p>  从字面意思即下一个Filter，但这个接口同样由FilterChain实现，此接口主要是通知FilterChain获取下一个Filter处理请求消息</p>
+</li>
+</ul>
+<p>FilterChain具体实现：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DefaultFilterChain</span> <span class="keyword">implements</span> <span class="title">Filter</span>.<span class="title">NextFliter</span>,<span class="title">Filter</span>.<span class="title">FilterChain</span> </span>&#123;</span><br><span class="line">     <span class="keyword">private</span> LinkedList&lt;Filter&gt; fliters = <span class="keyword">new</span> LinkedList&lt;Filter&gt;();</span><br><span class="line">     <span class="keyword">private</span> <span class="keyword">int</span> index = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">     <span class="function"><span class="keyword">public</span> <span class="title">DefaultFilterChain</span><span class="params">()</span></span>&#123;&#125;</span><br><span class="line"></span><br><span class="line">     <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addLast</span><span class="params">(Filter fliter)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">if</span> (fliter == <span class="keyword">null</span>)</span><br><span class="line">                 <span class="keyword">return</span>;</span><br><span class="line">            fliters.addLast(fliter);</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line">     <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">addFirst</span><span class="params">(Filter fliter)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">if</span> (fliter == <span class="keyword">null</span>)</span><br><span class="line">                 <span class="keyword">return</span>;</span><br><span class="line">            fliters.addFirst(fliter);</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">     <span class="function"><span class="keyword">public</span>  <span class="keyword">void</span> <span class="title">messageReceived</span><span class="params">(String msgType, List&lt;String&gt; contents)</span> </span>&#123;</span><br><span class="line">            index = -<span class="number">1</span>;</span><br><span class="line">           doFilter(msgType, contents);</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">     <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doFilter</span><span class="params">(String msgType, List&lt;String&gt; contents)</span> </span>&#123;</span><br><span class="line">            index++;</span><br><span class="line">            <span class="keyword">if</span>( index &lt; fliters.size())&#123;</span><br><span class="line">                 fliters.get( index).messageReceived(msgType, contents, <span class="keyword">this</span>);</span><br><span class="line">           &#125;</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>FilterChain实现总结：<br>  优点</p>
+<pre><code><span class="number">1</span>. Filters使用链表存储，实现简单。每个<span class="keyword">Filter</span>不必引用下一个<span class="keyword">Filter</span>，由FilterChain实现，这样<span class="keyword">Filter</span>实现比较简单方便
+<span class="number">2</span>. FilterChain同时实现NextFliter，每个<span class="keyword">Filter</span>在调用下一个<span class="keyword">Filter</span>时只需要调用nextFilter.doFilter(...)方法，这样做实现了接口隔离的效果
+</code></pre><p>不足</p>
+<pre><code><span class="number">1.</span> 内部使用index，造成线程不安全，如果对messageReceived方法同步代价太高，不合适
+<span class="number">2.</span> 虽然FilterChain和NextFilter起到接口隔离效果，但两个接口同时由DefaultFilterChain实现，代码耦合度太高，不利于拓展
+<span class="number">3.</span> 对请求消息不够抽象，造成功能单一
+<span class="number">4.</span> 只能单向过滤处理消息，不能反向
+</code></pre><p>优化空间</p>
+<pre><code><span class="number">1.</span> 不使用LinkedList，自己实现单向链表或者双向链表，避免使用index实现线程安全
+<span class="number">2.</span> 使用双向链表实现双向过滤处理，既可以处理messageReceived消息，又可以处理messageSent消息
+<span class="number">3.</span> FilterChain和NextFilter分开实现，降低耦合度
+</code></pre><p>有机会介绍下在Mina中责任链是如何实现的…</p>
+
+      
+    </div>
+    
+    <div class="article-info article-info-index">
+      
+      
+	<div class="article-tag tagcloud">
+		<ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/java/">java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/设计模式/">设计模式</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/责任链模式/">责任链模式</a></li></ul>
+	</div>
+
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+    
+  </div>
+  
+</article>
+
+
+
+
+
+
+
   
     <article id="post-译-JavaSE-8-Lambda-快速学习（四）-完结" class="article article-type-post" itemscope itemprop="blogPost">
   

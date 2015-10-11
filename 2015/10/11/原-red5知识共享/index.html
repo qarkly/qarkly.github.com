@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>[原]red5知识共享 | qarkly的博客</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="此文是从之前做的red5知识分享PPT中摘取，内容比较简单粗略。当时在讯飞做爱吼网流媒体服务smp，对red5有点了解。
+Red5中AMF格式解析
+AMF0数据类型及标志位
+
+Number - 0x00 (Encoded as IEEE 64-bit double-precision floating point number)
+Boolean - 0x01 (Encoded as a singl">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[原]red5知识共享">
+<meta property="og:url" content="http://qarkly@github.com/2015/10/11/原-red5知识共享/index.html">
+<meta property="og:site_name" content="qarkly的博客">
+<meta property="og:description" content="此文是从之前做的red5知识分享PPT中摘取，内容比较简单粗略。当时在讯飞做爱吼网流媒体服务smp，对red5有点了解。
+Red5中AMF格式解析
+AMF0数据类型及标志位
+
+Number - 0x00 (Encoded as IEEE 64-bit double-precision floating point number)
+Boolean - 0x01 (Encoded as a singl">
+<meta property="og:image" content="http://qarkly@github.com/../img/red5/amf.png">
+<meta property="og:image" content="http://qarkly@github.com/../img/red5/mina.png">
+<meta property="og:image" content="http://qarkly@github.com/../img/red5/decoder.png">
+<meta property="og:image" content="http://qarkly@github.com/../img/red5/header.png">
+<meta property="og:updated_time" content="2015-10-11T13:44:11.087Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="[原]red5知识共享">
+<meta name="twitter:description" content="此文是从之前做的red5知识分享PPT中摘取，内容比较简单粗略。当时在讯飞做爱吼网流媒体服务smp，对red5有点了解。
+Red5中AMF格式解析
+AMF0数据类型及标志位
+
+Number - 0x00 (Encoded as IEEE 64-bit double-precision floating point number)
+Boolean - 0x01 (Encoded as a singl">
+  
+    <link rel="alternative" href="/atom.xml" title="qarkly的博客" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  <link rel="stylesheet" href="/css/style.css" type="text/css">
+</head>
+<body>
+  <div id="container">
+    <div class="left-col">
+    <div class="overlay"></div>
+<div class="intrude-less">
+	<header id="header" class="inner">
+		<a href="/" class="profilepic">
+			
+			<img lazy-src="/selfi.png" class="js-avatar">
+			
+		</a>
+
+		<hgroup>
+		  <h1 class="header-author"><a href="/">qarkly</a></h1>
+		</hgroup>
+
+		
+		<p class="header-subtitle">个人技术博客</p>
+		
+
+		
+			<div class="switch-btn">
+				<div class="icon">
+					<div class="icon-ctn">
+						<div class="icon-wrap icon-house" data-idx="0">
+							<div class="birdhouse"></div>
+							<div class="birdhouse_holes"></div>
+						</div>
+						<div class="icon-wrap icon-ribbon hide" data-idx="1">
+							<div class="ribbon"></div>
+						</div>
+						
+						<div class="icon-wrap icon-link hide" data-idx="2">
+							<div class="loopback_l"></div>
+							<div class="loopback_r"></div>
+						</div>
+						
+						
+						<div class="icon-wrap icon-me hide" data-idx="3">
+							<div class="user"></div>
+							<div class="shoulder"></div>
+						</div>
+						
+					</div>
+					
+				</div>
+				<div class="tips-box hide">
+					<div class="tips-arrow"></div>
+					<ul class="tips-inner">
+						<li>菜单</li>
+						<li>标签</li>
+						
+						<li>友情链接</li>
+						
+						
+						<li>关于我</li>
+						
+					</ul>
+				</div>
+			</div>
+		
+
+		<div class="switch-area">
+			<div class="switch-wrap">
+				<section class="switch-part switch-part1">
+					<nav class="header-menu">
+						<ul>
+						
+							<li><a href="/">主页</a></li>
+				        
+							<li><a href="/archives">所有文章</a></li>
+				        
+							<li><a href="/tags/随笔">随笔</a></li>
+				        
+						</ul>
+					</nav>
+					<nav class="header-nav">
+						<div class="social">
+							
+								<a class="github" target="_blank" href="https://github.com/qarkly" title="github">github</a>
+					        
+								<a class="weibo" target="_blank" href="http://weibo.com/qarkly" title="weibo">weibo</a>
+					        
+								<a class="rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+					        
+						</div>
+					</nav>
+				</section>
+				
+				
+				<section class="switch-part switch-part2">
+					<div class="widget tagcloud" id="js-tagcloud">
+						<a href="/tags/Jackrabbit/" style="font-size: 16.67px;">Jackrabbit</a> <a href="/tags/Lambda/" style="font-size: 20px;">Lambda</a> <a href="/tags/iflytek/" style="font-size: 10px;">iflytek</a> <a href="/tags/java/" style="font-size: 20px;">java</a> <a href="/tags/java8/" style="font-size: 20px;">java8</a> <a href="/tags/mina/" style="font-size: 10px;">mina</a> <a href="/tags/red5/" style="font-size: 10px;">red5</a> <a href="/tags/内容仓库/" style="font-size: 16.67px;">内容仓库</a> <a href="/tags/生活/" style="font-size: 10px;">生活</a> <a href="/tags/算法/" style="font-size: 13.33px;">算法</a> <a href="/tags/系统知识/" style="font-size: 10px;">系统知识</a> <a href="/tags/设计模式/" style="font-size: 13.33px;">设计模式</a> <a href="/tags/责任链/" style="font-size: 10px;">责任链</a> <a href="/tags/责任链模式/" style="font-size: 10px;">责任链模式</a> <a href="/tags/随笔/" style="font-size: 10px;">随笔</a>
+					</div>
+				</section>
+				
+				
+				
+				<section class="switch-part switch-part3">
+					<div id="js-friends">
+					
+			          <a target="_blank" class="main-nav-link switch-friends-link" href="http://blog.csdn.net/qarkly112649">csdn的博客</a>
+			        
+			        </div>
+				</section>
+				
+
+				
+				
+				<section class="switch-part switch-part4">
+				
+					<div id="js-aboutme">南京邮电大学09级,就职于华为从事web相关工作…</div>
+				</section>
+				
+			</div>
+		</div>
+	</header>				
+</div>
+    </div>
+    <div class="mid-col">
+      <nav id="mobile-nav">
+  	<div class="overlay">
+  		<div class="slider-trigger"></div>
+  		<h1 class="header-author js-mobile-header hide">qarkly</h1>
+  	</div>
+	<div class="intrude-less">
+		<header id="header" class="inner">
+			<div class="profilepic">
+				<img lazy-src="/selfi.png" class="js-avatar">
+			</div>
+			<hgroup>
+			  <h1 class="header-author">qarkly</h1>
+			</hgroup>
+			
+			<p class="header-subtitle">个人技术博客</p>
+			
+			<nav class="header-menu">
+				<ul>
+				
+					<li><a href="/">主页</a></li>
+		        
+					<li><a href="/archives">所有文章</a></li>
+		        
+					<li><a href="/tags/随笔">随笔</a></li>
+		        
+		        <div class="clearfix"></div>
+				</ul>
+			</nav>
+			<nav class="header-nav">
+				<div class="social">
+					
+						<a class="github" target="_blank" href="https://github.com/qarkly" title="github">github</a>
+			        
+						<a class="weibo" target="_blank" href="http://weibo.com/qarkly" title="weibo">weibo</a>
+			        
+						<a class="rss" target="_blank" href="/atom.xml" title="rss">rss</a>
+			        
+				</div>
+			</nav>
+		</header>				
+	</div>
+</nav>
+      <div class="body-wrap"><article id="post-原-red5知识共享" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2015/10/11/原-red5知识共享/" class="article-date">
+  	<time datetime="2015-10-11T10:32:39.000Z" itemprop="datePublished">2015-10-11</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      [原]red5知识共享
+    </h1>
+  
+
+      </header>
+      
+      <div class="article-info article-info-post">
+        
+	<div class="article-tag tagcloud">
+		<ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/iflytek/">iflytek</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/red5/">red5</a></li></ul>
+	</div>
+
+        
+
+        <div class="clearfix"></div>
+      </div>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p><em>此文是从之前做的red5知识分享PPT中摘取，内容比较简单粗略。当时在讯飞做爱吼网流媒体服务smp，对red5有点了解。</em></p>
+<h3 id="Red5中AMF格式解析">Red5中AMF格式解析</h3><ol>
+<li><p>AMF0数据类型及标志位</p>
+<ul>
+<li>Number - 0x00 (Encoded as IEEE 64-bit double-precision floating point number)</li>
+<li>Boolean - 0x01 (Encoded as a single byte of value 0x00 or 0x01)</li>
+<li>Object - 0x03 (Set of key/value pairs)</li>
+<li>Null - 0x05</li>
+<li>ECMA Array - 0x08 (32-bit entry count)</li>
+<li>Object End - 0x09 (preceded by a empty 16-bit string length)</li>
+<li>Strict Array - 0x0a (32-bit entry count)</li>
+<li>Date - 0x0b (Encoded as IEEE 64-bit double-precision floating point number with 16-bit integer timezone offset)</li>
+<li>Long String - 0x0c (32-bit integer string length with UTF-8 string)</li>
+<li>XML Document - 0xf0 (32-bit integer string length with UTF-8 string)</li>
+<li>Typed Object - 0x10 (16-bit integer name length with UTF-8 name, followed by entries)</li>
+<li>Switch to AMF3 - 0x11</li>
+</ul>
+</li>
+<li><p>AMF3数据类型及标志位</p>
+<ul>
+<li>Undefined - 0x00</li>
+<li>Null - 0x01</li>
+<li>Boolean False - 0x02</li>
+<li>Boolean True - 0x03</li>
+<li>Integer - 0x04 (expandable 8+ bit integer)</li>
+<li>Double - 0x05 (Encoded as IEEE 64-bit double-precision floating point number)</li>
+<li>String - 0x06 (expandable 8+ bit integer string length with a UTF-8 string)</li>
+<li>XML - 0x07 (expandable 8+ bit integer string length and/or flags with a UTF-8 string)</li>
+<li>Date - 0x08 (expandable 8+ bit integer flags with a IEEE 64-bit double-precision floating point UTC offset time)</li>
+<li>Array - 0x09 (expandable 8+ bit integer entry count and/or flags with optional expandable 8+ bit integer name lengths with a UTF-8 names)</li>
+<li>Object - 0x0A (expandable 8+ bit integer entry count and/or flags with optional expandable 8+ - bit integer name lengths with a UTF-8 names)</li>
+<li>XML End - 0x0B (expandable 8+ bit integer flags)</li>
+<li>ByteArray - 0x0C (expandable 8+ bit integer flags with optional 8 bit byte length)</li>
+</ul>
+</li>
+<li><p>Red5中AMF格式解析实现<br></p><p><img src="../img/red5/amf.png" alt="red5 amf格式解析实现"></p><br><b>Example</b>  <p></p>
+<ul>
+<li><p>解析AMF数据</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">IoBuffer buffer = IoBuffer.wrap(bytes);   <span class="comment">//bytes 为AMF0格式byte数组</span></span><br><span class="line">Input input = <span class="keyword">new</span> org.red5.io.amf.Input(buffer);</span><br><span class="line">Deserializer deserializer  = <span class="keyword">new</span> Deserializer();</span><br><span class="line">String str = deserializer.deserialize(input, String.class);</span><br><span class="line">Object  object = deserializer.deserialize(input, Object .class);</span><br><span class="line">…</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>构造AMF数据</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">String str = “test”;</span><br><span class="line">Output output = <span class="keyword">new</span> org.red5.io.amf.Output(buffer);</span><br><span class="line">Serializer serializer = <span class="keyword">new</span> Serializer();</span><br><span class="line">serializer.serialize(output, str);</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h3 id="Red5解析RTMP消息包">Red5解析RTMP消息包</h3><ul>
+<li><p>背景知识<br>  Mina框架核心部分框架<br><img src="../img/red5/mina.png" alt="mina架构图"><br><em>Mina中由Filter过滤器处理来自网络数据包，然后转交给应用层的IoHandler做具体的业务处理</em></p>
+</li>
+<li><p>RMTP消息包解析<br>  RTMPMinaProtocolDecoder接收来自Mina的数据，真正做数据解析是由RTMPProtocolDecoder类来完成RTMP数据包header和body的解析工作<br><img src="../img/red5/decoder.png" alt="red5消息格式解析"></p>
+</li>
+<li>Header解析<br>RTMP包头结构<br>包头有4种长度:12, 8, 4,  1 byte(s).<br>完整的12字节RTMP包头每个字节的含义:  </li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>用途</th>
+<th>大小(Byte)</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Head_Type</td>
+<td>1</td>
+<td>包头</td>
+</tr>
+<tr>
+<td>TiMMER</td>
+<td>3</td>
+<td>时间戳</td>
+</tr>
+<tr>
+<td>AMFSize</td>
+<td>3</td>
+<td>数据大小</td>
+</tr>
+<tr>
+<td>AMFType</td>
+<td>1</td>
+<td>数据类型</td>
+</tr>
+<tr>
+<td>StreamID</td>
+<td>4</td>
+<td>流ID</td>
+</tr>
+</tbody>
+</table>
+<p>完整的RTMP包头是12bytes,<br>包含时间戳 ,AMFSize, AMFType,StreamID信息,<br>8字节的包头只纪录 了时间戳,AMFSize,AMFType,<br>其他字节的包头纪录信息依次类推 </p>
+<p> <strong> Red5如何将8，4,  1 字节的不完整包头构造成完整的Header消息? </strong><br>详见：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">在RTMPMinaProtocolDecoder.decode(IoSession session, IoBuffer in, ProtocolDecoderOutput out)方法中</span><br><span class="line"> <span class="comment">// get our state</span></span><br><span class="line"> <span class="keyword">final</span> ProtocolState state = (ProtocolState)</span><br><span class="line"> session.getAttribute(ProtocolState.SESSION_KEY);</span><br><span class="line"></span><br><span class="line">在RTMPProtocolDecoder. decode(ProtocolState state, IoBuffer in)方法中</span><br><span class="line"><span class="keyword">final</span> RTMP rtmp = (RTMP) state;</span><br></pre></td></tr></table></figure></p>
+<p>   Red5通过在IoSession中维护Header消息的map,通过获取上一个header来将缺失的包头信息补齐，具体代码见<br>RTMPProtocolDecoder. decodeHeader(IoBuffer in, Header lastHeader)方法</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="../img/red5/header.png" alt="header消息解析"></p>
+<ul>
+<li><p>Body解析  </p>
+<p>   Rtmp包默认的最大长度为128字节,(或通过chunksize改变rtmp包最大<br>长度), 当AMF数据超过128Byte的时候就可能有多个rtmp包组成,如果需<br>要解码的rtmp包太长则被TCP协议分割成多个TCP包.那么解码的时候需要<br>先将包含rtmp包的tcp封包合并, 再把合并的数据解码,解码后可得到amf<br>格式的数据,将这些AMF数据取出来就可以对AMF数据解码</p>
+<p> Red5在RTMP中像维护header一样维护一份packet的map信息，除此之外还有维护当前的解码状态。Body的解析首先要从header中得到一个完整packet消息的大小，根据当前的接受到的字节大小还有chunksize来判断是否收到一个完整的packet消息的字节，然后再进行body解析与header形成一个业务类，最后转发到RTMPMinaIoHandler做业务处理。</p>
+<p> 具体代码见RTMPPotocolDecoder.decodePacket(RTMP rtmp, IoBuffer in)方法和decodeMessage(RTMP rtmp, Header header, IoBuffer in)方法</p>
+</li>
+</ul>
+
+      
+    </div>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2015/10/11/hello-world/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">Hello World</div>
+      <strong class="article-nav-caption">></strong>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+<div class="share">
+	<!-- JiaThis Button BEGIN -->
+	<div class="jiathis_style">
+		<span class="jiathis_txt">分享到：</span>
+		<a class="jiathis_button_tsina"></a>
+		<a class="jiathis_button_cqq"></a>
+		<a class="jiathis_button_douban"></a>
+		<a class="jiathis_button_weixin"></a>
+		<a class="jiathis_button_tumblr"></a>
+		<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+	</div>
+	<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=1405949716054953" charset="utf-8"></script>
+	<!-- JiaThis Button END -->
+</div>
+
+
+
+<div class="duoshuo">
+	<!-- 多说评论框 start -->
+	<div class="ds-thread" data-thread-key="原-red5知识共享" data-title="[原]red5知识共享" data-url="http://qarkly@github.com/2015/10/11/原-red5知识共享/"></div>
+	<!-- 多说评论框 end -->
+	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+	<script type="text/javascript">
+	var duoshuoQuery = {short_name:"true"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		 || document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+	<!-- 多说公共JS代码 end -->
+</div>
+
+
+
+
+</div>
+      <footer id="footer">
+  <div class="outer">
+    <div id="footer-info">
+    	<div class="footer-left">
+    		&copy; 2015 qarkly
+    	</div>
+      	<div class="footer-right">
+      		<a href="http://hexo.io/" target="_blank">Hexo</a>  Theme <a href="https://github.com/litten/hexo-theme-yilia" target="_blank">Yilia</a> by Litten
+      	</div>
+    </div>
+  </div>
+</footer>
+    </div>
+    
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css" type="text/css">
+
+
+<script>
+	var yiliaConfig = {
+		fancybox: true,
+		mathjax: true,
+		animate: true,
+		isHome: false,
+		isPost: true,
+		isArchive: false,
+		isTag: false,
+		isCategory: false,
+		open_in_new: false
+	}
+</script>
+<script src="http://7.url.cn/edu/jslib/comb/require-2.1.6,jquery-1.9.1.min.js" type="text/javascript"></script>
+<script src="/js/main.js" type="text/javascript"></script>
+
+
+
+
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+    tex2jax: {
+        inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+        processEscapes: true,
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    }
+});
+
+MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';                 
+    }       
+});
+</script>
+
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+  </div>
+</body>
+</html>
